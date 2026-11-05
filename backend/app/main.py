@@ -7,6 +7,7 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import settings
 from app.routers.auth import router as auth_router
+from app.routers.jobs import router as jobs_router
 
 
 @asynccontextmanager
@@ -89,3 +90,5 @@ async def health():
 # Register domain routers
 app.include_router(auth_router)
 app.include_router(auth_router, prefix="/v1")
+app.include_router(jobs_router)
+app.include_router(jobs_router, prefix="/v1")
