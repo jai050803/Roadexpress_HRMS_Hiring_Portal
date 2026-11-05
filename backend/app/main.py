@@ -9,6 +9,8 @@ from app.config import settings
 from app.routers.auth import router as auth_router
 from app.routers.jobs import router as jobs_router
 from app.routers.applications import router as applications_router
+from app.routers.resumes import router as resumes_router
+from app.routers.cv_bank import router as cv_bank_router
 
 
 @asynccontextmanager
@@ -95,3 +97,7 @@ app.include_router(jobs_router)
 app.include_router(jobs_router, prefix="/v1")
 app.include_router(applications_router)
 app.include_router(applications_router, prefix="/v1")
+app.include_router(resumes_router)
+app.include_router(resumes_router, prefix="/v1")
+app.include_router(cv_bank_router)
+app.include_router(cv_bank_router, prefix="/v1")

@@ -25,8 +25,9 @@ from app.schemas.applications import (
     StatusHistoryItem,
 )
 from app.services.candidates.service import CandidateService
+from app.services.resumes.service import ResumeService
 from app.utils.reference_number import generate_reference_number
-from app.utils.storage import save_resume_file
+from app.utils.storage import generate_presigned_download_url
 
 
 STATUS_MAPPING: Dict[str, Dict[str, Any]] = {
@@ -287,24 +288,13 @@ class ApplicationService:
         db.add(application)
         await db.flush()
 
-        # 7. Save resume file to storage & insert resume record
-        file_url, file_name, file_size, file_hash = await save_resume_file(
+        # 7. Upload resume via ResumeService (validates PDF, size, uploads to S3/MinIO, enqueues celery task)
+        await ResumeService.upload_resume(
+            db=db,
             file=resume,
             application_id=app_id,
+            job_role_id=job_role_id,
         )
-
-        resume_record = Resume(
-            application_id=app_id,
-            file_url=file_url,
-            file_name=file_name,
-            file_hash=file_hash,
-            file_size_bytes=file_size,
-            parse_status="pending",
-        )
-        db.add(resume_record)
-        await db.flush()
-
-        application.resume_id = resume_record.id
 
         # 8. Log initial status history row
         await cls._log_history(
@@ -340,7 +330,26 @@ class ApplicationService:
     ) -> ApplicationSubmitResponse:
         """
         HR manual CV upload flow (source: 'email_upload').
+        Validates that the target job role is published before running the gate.
         """
+        # Validate job role status before gate (HR cannot upload to draft or closed roles)
+        job_stmt = select(JobRole).where(JobRole.id == job_role_id)
+        job_res = await db.execute(job_stmt)
+        job_role = job_res.scalar_one_or_none()
+        if not job_role:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "job_not_found", "message": "Job role not found."},
+            )
+        if job_role.status != "published":
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "error": "invalid_job_status",
+                    "message": f"Cannot upload resume: job role status is '{job_role.status}'. Resumes can only be uploaded to published roles.",
+                },
+            )
+
         key = idempotency_key or uuid.uuid4()
         resp = await cls.submit_application(
             db=db,
@@ -440,10 +449,12 @@ class ApplicationService:
 
         resume_info = None
         if app.resume:
+            presigned_url = generate_presigned_download_url(app.resume.file_url)
             resume_info = ResumeInfo(
                 id=app.resume.id,
                 file_name=app.resume.file_name,
                 file_url=app.resume.file_url,
+                download_url=presigned_url,
                 file_size_bytes=app.resume.file_size_bytes,
                 parse_status=app.resume.parse_status,
                 parsed_json=app.resume.parsed_json,

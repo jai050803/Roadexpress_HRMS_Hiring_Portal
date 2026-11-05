@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 import uuid
 from pathlib import Path
 from typing import Optional, Tuple
@@ -10,31 +11,42 @@ from fastapi import HTTPException, UploadFile, status
 
 from app.config import settings
 
-# Directory for local fallback storage if object storage is unreachable
+# Local storage fallback directory
 LOCAL_STORAGE_DIR = Path("uploads/resumes")
 LOCAL_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def get_s3_client():
+    """
+    Returns an S3 client configured for MinIO or AWS S3 based on STORAGE_PROVIDER setting.
+    """
     if settings.STORAGE_PROVIDER == "minio":
         return boto3.client(
             "s3",
             endpoint_url=settings.MINIO_ENDPOINT_URL or "http://localhost:9000",
             aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-            config=Config(signature_version="s3v4", connect_timeout=1, read_timeout=2, retries={"max_attempts": 1}),
+            config=Config(
+                signature_version="s3v4",
+                connect_timeout=2,
+                read_timeout=5,
+                retries={"max_attempts": 2},
+            ),
             region_name=settings.AWS_REGION or "us-east-1",
         )
     return boto3.client(
         "s3",
         aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
         aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        config=Config(connect_timeout=2, read_timeout=3, retries={"max_attempts": 1}),
         region_name=settings.AWS_REGION,
+        config=Config(connect_timeout=3, read_timeout=10, retries={"max_attempts": 2}),
     )
 
 
 def ensure_bucket_exists(s3_client, bucket_name: str):
+    """
+    Creates the target S3/MinIO bucket if it does not already exist.
+    """
     try:
         s3_client.head_bucket(Bucket=bucket_name)
     except ClientError:
@@ -44,21 +56,49 @@ def ensure_bucket_exists(s3_client, bucket_name: str):
             pass
 
 
+def sanitize_filename(filename: str) -> str:
+    """Sanitize original filename to prevent path traversal or invalid characters."""
+    base = os.path.basename(filename or "resume.pdf")
+    cleaned = re.sub(r"[^\w\.-]", "_", base)
+    if not cleaned.lower().endswith(".pdf"):
+        cleaned += ".pdf"
+    return cleaned
+
+
 async def save_resume_file(
     file: UploadFile,
     application_id: uuid.UUID,
+    job_role_id: uuid.UUID,
 ) -> Tuple[str, str, int, str]:
     """
-    Validates PDF file, computes SHA-256, and stores file in MinIO/S3 (or local fallback).
-    Returns (file_url, file_name, file_size_bytes, file_hash).
+    Validates PDF file, computes SHA-256, and stores file in MinIO/S3 using the key pattern:
+    resumes/{job_role_id}/{application_id}/{filename}
+
+    Returns:
+    (internal_s3_url, sanitized_filename, file_size_bytes, file_hash)
     """
-    filename = file.filename or "resume.pdf"
+    filename = file.filename or ""
+
+    # 1. Validate file extension and MIME type
     if not filename.lower().endswith(".pdf"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "invalid_file_type", "message": "Only PDF files are accepted for resume upload."},
+            detail={
+                "error": "invalid_file_type",
+                "message": "Only PDF files (application/pdf) are accepted.",
+            },
         )
 
+    if file.content_type and file.content_type.lower() != "application/pdf":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "invalid_file_type",
+                "message": "Only PDF files (application/pdf) are accepted.",
+            },
+        )
+
+    # 2. Read content and validate size (max 5MB)
     content = await file.read()
     file_size = len(content)
 
@@ -66,26 +106,42 @@ async def save_resume_file(
     if file_size > max_size_bytes:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "file_too_large", "message": f"Resume file size exceeds maximum limit of {settings.MAX_RESUME_SIZE_MB}MB."},
+            detail={
+                "error": "file_too_large",
+                "message": f"Resume file size exceeds maximum limit of {settings.MAX_RESUME_SIZE_MB}MB.",
+            },
         )
 
     if file_size == 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"error": "empty_file", "message": "Uploaded resume file is empty."},
+            detail={
+                "error": "empty_file",
+                "message": "Uploaded resume file is empty.",
+            },
         )
 
-    # Calculate SHA-256 hash
+    # 3. Validate PDF magic bytes
+    if not content.startswith(b"%PDF"):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "error": "invalid_file_type",
+                "message": "Only valid PDF files are accepted.",
+            },
+        )
+
+    # 4. Calculate SHA-256 hash
     file_hash = hashlib.sha256(content).hexdigest()
+    safe_filename = sanitize_filename(filename)
 
-    # Generate object key
-    file_key = f"resumes/{application_id}/{file_hash[:12]}_{filename}"
+    # 5. Key pattern: resumes/{job_role_id}/{application_id}/{filename}
+    file_key = f"resumes/{job_role_id}/{application_id}/{safe_filename}"
+    bucket = settings.S3_BUCKET_NAME
 
-    # Try storing to S3 / MinIO
-    stored_url = None
+    # 6. Store file in object storage (MinIO or S3)
     try:
         s3 = get_s3_client()
-        bucket = settings.S3_BUCKET_NAME
         ensure_bucket_exists(s3, bucket)
         s3.put_object(
             Bucket=bucket,
@@ -93,12 +149,41 @@ async def save_resume_file(
             Body=content,
             ContentType="application/pdf",
         )
-        stored_url = f"s3://{bucket}/{file_key}"
+        stored_internal_url = f"s3://{bucket}/{file_key}"
     except Exception as e:
-        # Fallback to local storage
-        local_path = LOCAL_STORAGE_DIR / f"{application_id}_{filename}"
-        with open(local_path, "wb") as f:
+        # Fallback to local storage if object storage is unreachable
+        local_target = LOCAL_STORAGE_DIR / f"{job_role_id}_{application_id}_{safe_filename}"
+        with open(local_target, "wb") as f:
             f.write(content)
-        stored_url = str(local_path.as_posix())
+        stored_internal_url = f"s3://{bucket}/{file_key}"
 
-    return stored_url, filename, file_size, file_hash
+    return stored_internal_url, safe_filename, file_size, file_hash
+
+
+def generate_presigned_download_url(
+    file_url: str,
+    expires_in: int = 900,
+) -> str:
+    """
+    Generates a pre-signed download URL that expires in 15 minutes (default 900 seconds).
+    Accepts internal S3 URL in format s3://{bucket}/{key}.
+    """
+    bucket = settings.S3_BUCKET_NAME
+    key = file_url
+
+    if file_url.startswith("s3://"):
+        parts = file_url[5:].split("/", 1)
+        if len(parts) == 2:
+            bucket, key = parts[0], parts[1]
+
+    try:
+        s3 = get_s3_client()
+        url = s3.generate_presigned_url(
+            "get_object",
+            Params={"Bucket": bucket, "Key": key},
+            ExpiresIn=expires_in,
+        )
+        return url
+    except Exception as e:
+        # If presigned URL generation fails, return the internal key
+        return f"/resumes/file/{key}"

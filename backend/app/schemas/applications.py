@@ -35,6 +35,7 @@ class ResumeInfo(BaseModel):
     id: uuid.UUID
     file_name: Optional[str] = None
     file_url: str
+    download_url: Optional[str] = None
     file_size_bytes: Optional[int] = None
     parse_status: str
     parsed_json: Optional[Dict[str, Any]] = None

@@ -18,6 +18,8 @@ from app.schemas.applications import (
     BulkRejectRequest,
     BulkActionResponse,
 )
+from app.schemas.resumes import PresignedUrlResponse
+from app.schemas.cv_bank import CVBankItem, CVBankListResponse
 
 __all__ = [
     "LoginRequest",
@@ -38,4 +40,7 @@ __all__ = [
     "BulkShortlistRequest",
     "BulkRejectRequest",
     "BulkActionResponse",
+    "PresignedUrlResponse",
+    "CVBankItem",
+    "CVBankListResponse",
 ]
