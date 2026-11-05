@@ -28,6 +28,7 @@ from app.services.candidates.service import CandidateService
 from app.services.resumes.service import ResumeService
 from app.utils.reference_number import generate_reference_number
 from app.utils.storage import generate_presigned_download_url
+from app.workers.tasks import send_notification_task
 
 
 STATUS_MAPPING: Dict[str, Dict[str, Any]] = {
@@ -309,6 +310,12 @@ class ApplicationService:
 
         # 9. Commit transaction
         await db.commit()
+
+        # 10. Asynchronously trigger application acknowledgement notification
+        try:
+            send_notification_task.delay(str(app_id), "applied_ack")
+        except Exception:
+            pass
 
         return ApplicationSubmitResponse(
             reference_number=ref_number,
@@ -645,6 +652,13 @@ class ApplicationService:
         )
 
         await db.commit()
+
+        # Asynchronously trigger shortlist notification
+        try:
+            send_notification_task.delay(str(application_id), "shortlisted")
+        except Exception:
+            pass
+
         return await cls.get_application(db, application_id)
 
     @classmethod
@@ -693,6 +707,13 @@ class ApplicationService:
         )
 
         await db.commit()
+
+        # Asynchronously trigger rejection notification (generic message to candidate)
+        try:
+            send_notification_task.delay(str(application_id), "rejected", custom_message=custom_message)
+        except Exception:
+            pass
+
         return await cls.get_application(db, application_id)
 
     @classmethod
@@ -709,6 +730,7 @@ class ApplicationService:
         processed_count = 0
         skipped_count = 0
         errors: List[str] = []
+        shortlisted_ids: List[uuid.UUID] = []
 
         for app_id in application_ids:
             stmt = select(Application).where(Application.id == app_id)
@@ -739,11 +761,20 @@ class ApplicationService:
                     changed_by=hr_user_id,
                 )
                 processed_count += 1
+                shortlisted_ids.append(app_id)
             except Exception as e:
                 skipped_count += 1
                 errors.append(f"Error shortlisting {application.reference_number}: {str(e)}")
 
         await db.commit()
+
+        # Trigger notifications for all shortlisted candidates
+        for s_id in shortlisted_ids:
+            try:
+                send_notification_task.delay(str(s_id), "shortlisted")
+            except Exception:
+                pass
+
         return BulkActionResponse(
             processed_count=processed_count,
             skipped_count=skipped_count,
@@ -771,6 +802,7 @@ class ApplicationService:
         processed_count = 0
         skipped_count = 0
         errors: List[str] = []
+        rejected_ids: List[uuid.UUID] = []
 
         for app_id in application_ids:
             stmt = select(Application).where(Application.id == app_id)
@@ -797,11 +829,20 @@ class ApplicationService:
                     changed_by=hr_user_id,
                 )
                 processed_count += 1
+                rejected_ids.append(app_id)
             except Exception as e:
                 skipped_count += 1
                 errors.append(f"Error rejecting {application.reference_number}: {str(e)}")
 
         await db.commit()
+
+        # Trigger notifications for all rejected candidates
+        for r_id in rejected_ids:
+            try:
+                send_notification_task.delay(str(r_id), "rejected")
+            except Exception:
+                pass
+
         return BulkActionResponse(
             processed_count=processed_count,
             skipped_count=skipped_count,
