@@ -7,8 +7,13 @@ from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base
 
+import os
+
 try:
-    from pgvector.sqlalchemy import Vector
+    if os.environ.get("ENABLE_PGVECTOR", "false").lower() == "true":
+        from pgvector.sqlalchemy import Vector
+    else:
+        Vector = None
 except ImportError:
     Vector = None
 

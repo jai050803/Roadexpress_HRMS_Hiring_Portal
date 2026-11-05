@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload
 
 from app.config import settings
-from app.database import AsyncSessionLocal
+import app.database
 from app.models.application import Application
 from app.models.notification import Notification
 from app.services.notifications.email_client import EmailClient
@@ -45,7 +45,7 @@ class NotificationService:
         4. Updates status to 'sent' or 'failed'.
         5. Never raises an exception to the caller.
         """
-        async with AsyncSessionLocal() as db:
+        async with app.database.AsyncSessionLocal() as db:
             notification_id = None
             try:
                 # 1. Idempotent Insert using DB constraint

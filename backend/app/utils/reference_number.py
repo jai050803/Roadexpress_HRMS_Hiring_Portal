@@ -14,9 +14,13 @@ async def generate_reference_number(db: AsyncSession) -> str:
     date_str = now.strftime("%Y%m%d")
     seq_name = f"app_ref_seq_{date_str}"
 
-    # Create sequence for the day if not exists, then get nextval
-    await db.execute(text(f"CREATE SEQUENCE IF NOT EXISTS {seq_name} START 1;"))
-    res = await db.execute(text(f"SELECT nextval('{seq_name}');"))
-    seq_num = res.scalar() or 1
+    try:
+        res = await db.execute(text(f"SELECT nextval('{seq_name}');"))
+        seq_num = res.scalar() or 1
+    except Exception:
+        # Sequence does not exist yet for today; create it and fetch nextval
+        await db.execute(text(f"CREATE SEQUENCE IF NOT EXISTS {seq_name} START 1;"))
+        res = await db.execute(text(f"SELECT nextval('{seq_name}');"))
+        seq_num = res.scalar() or 1
 
     return f"APP-{date_str}-{seq_num:04d}"
