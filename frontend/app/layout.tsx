@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-// @ts-expect-error The Next.js build handles this global stylesheet import.
 import "./globals.css";
 
 export const metadata: Metadata = {
