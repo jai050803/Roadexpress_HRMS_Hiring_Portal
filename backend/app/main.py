@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.config import settings
+from app.routers.auth import router as auth_router
 
 
 @asynccontextmanager
@@ -83,3 +84,8 @@ async def health():
         "app": "Road Express HRMS",
         "env": settings.APP_ENV,
     }
+
+
+# Register domain routers
+app.include_router(auth_router)
+app.include_router(auth_router, prefix="/v1")
