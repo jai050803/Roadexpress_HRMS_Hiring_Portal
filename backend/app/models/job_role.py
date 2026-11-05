@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, List, Optional
-from sqlalchemy import Boolean, DateTime, ForeignKey, Index, Integer, String, Text, func
+from sqlalchemy import Boolean, DateTime, Float, ForeignKey, Index, Integer, String, Text, func
 from sqlalchemy.dialects.postgresql import ARRAY, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -47,7 +47,7 @@ class JobRole(Base):
 
     # Generated
     jd_text: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    jd_embedding = mapped_column(Vector(1536) if Vector is not None else ARRAY(Text), nullable=True)
+    jd_embedding = mapped_column(Vector(1536) if Vector is not None else ARRAY(Float), nullable=True)
 
     # Limits
     application_deadline: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
