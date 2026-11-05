@@ -63,5 +63,9 @@ redis_data/
 celerybeat-schedule
 celerybeat.pid
 
+# Local Uploads
+uploads/
+backend/uploads/
+
 # Project documentation reference (not committed to codebase repository)
 project_files/
