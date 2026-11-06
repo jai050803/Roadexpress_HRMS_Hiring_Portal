@@ -88,12 +88,15 @@ class ScreeningService:
         min_exp = job_role.min_experience_years
         cand_exp = parsed_resume.get("total_experience_years")
 
-        hard_filter_passed = True
-        if min_exp is not None and min_exp > 0:
-            if cand_exp is None or float(cand_exp) < float(min_exp):
-                hard_filter_passed = False
-            else:
-                hard_filter_passed = True
+        if screening_data.get("llm_rationale") == "Screening failed — manual review required":
+            hard_filter_passed = False
+        else:
+            hard_filter_passed = True
+            if min_exp is not None and min_exp > 0:
+                if cand_exp is None or float(cand_exp) < float(min_exp):
+                    hard_filter_passed = False
+                else:
+                    hard_filter_passed = True
 
         screening_data["hard_filter_passed"] = hard_filter_passed
 

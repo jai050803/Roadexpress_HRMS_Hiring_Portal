@@ -1,9 +1,10 @@
 import csv
 from datetime import datetime, time, timezone
 import logging
+import re
 from typing import Optional
 from fastapi.responses import StreamingResponse
-from sqlalchemy import cast, func, select
+from sqlalchemy import cast, func, or_, select, text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import contains_eager
@@ -76,11 +77,22 @@ class CVBankService:
 
         if filters.skill:
             skill_clean = filters.skill.strip()
-            # PostgreSQL JSONB array containment on parsed_json -> 'skills'
-            skill_cond = (
-                cast(Resume.parsed_json["skills"], JSONB).contains([skill_clean.lower()])
-                | cast(Resume.parsed_json["skills"], JSONB).contains([skill_clean])
+            variants = list({
+                skill_clean,
+                skill_clean.lower(),
+                skill_clean.upper(),
+                skill_clean.capitalize(),
+                skill_clean.title(),
+            })
+            containment_clauses = [
+                cast(Resume.parsed_json["skills"], JSONB).contains([v])
+                for v in variants
+            ]
+            escaped_regex = re.escape(skill_clean).replace("\\", "\\\\").replace("'", "''")
+            jsonpath_clause = text(
+                f"jsonb_path_exists(resumes.parsed_json, '$.skills[*] ? (@ like_regex \"^{escaped_regex}$\" flag \"i\")')"
             )
+            skill_cond = or_(*containment_clauses, jsonpath_clause)
             query = query.where(skill_cond)
             count_query = count_query.where(skill_cond)
 
