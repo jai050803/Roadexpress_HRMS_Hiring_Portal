@@ -31,6 +31,7 @@ export default function Sidebar() {
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Job Roles", href: "/jobs", icon: Briefcase },
     { label: "Create Role", href: "/jobs/new", icon: PlusCircle },
+    { label: "CV Bank", href: "/cv-bank", icon: Users },
     { label: "Upload Emailed CV", href: "/upload-cv", icon: FileUp },
   ];
 

@@ -138,6 +138,8 @@ export default function CandidateTable({
               <th className="py-2.5 px-3">Applied</th>
               <th className="py-2.5 px-3">Source</th>
               <th className="py-2.5 px-3">AI Score</th>
+              <th className="py-2.5 px-3">Hard Filter</th>
+              <th className="py-2.5 px-3">Skills Match</th>
               <th className="py-2.5 px-3">Status</th>
               <th className="py-2.5 px-3 text-right">Actions</th>
             </tr>
@@ -145,7 +147,7 @@ export default function CandidateTable({
           <tbody className="divide-y divide-slate-100">
             {candidates.length === 0 ? (
               <tr>
-                <td colSpan={8} className="py-8 text-center text-slate-400 italic">
+                <td colSpan={10} className="py-8 text-center text-slate-400 italic">
                   {isLoading ? "Loading candidates..." : "No candidates found matching the selected filter."}
                 </td>
               </tr>
@@ -153,12 +155,19 @@ export default function CandidateTable({
               candidates.map((c) => {
                 const isSelected = selectedIds.has(c.id);
                 const isTerminal = c.current_status === "REJECTED" || c.current_status === "OFFER_ACCEPTED";
+                const isHardFail = c.hard_filter_passed === false;
 
                 return (
                   <tr
                     key={c.id}
-                    className={`hover:bg-slate-50 transition ${
-                      isSelected ? "bg-blue-50/50" : ""
+                    className={`transition ${
+                      isHardFail
+                        ? isSelected
+                          ? "bg-rose-100/70 border-l-4 border-rose-500"
+                          : "bg-rose-50/70 hover:bg-rose-100/50 border-l-4 border-rose-400"
+                        : isSelected
+                        ? "bg-blue-50/50 hover:bg-blue-50/70"
+                        : "hover:bg-slate-50"
                     }`}
                   >
                     <td className="py-2.5 px-3">
@@ -185,12 +194,12 @@ export default function CandidateTable({
                     </td>
 
                     {/* Reference Number */}
-                    <td className="py-2.5 px-3 font-mono text-slate-600 font-medium">
+                    <td className="py-2.5 px-3 font-mono text-slate-600 font-medium whitespace-nowrap">
                       {c.reference_number}
                     </td>
 
                     {/* Applied Date */}
-                    <td className="py-2.5 px-3 text-slate-600">
+                    <td className="py-2.5 px-3 text-slate-600 whitespace-nowrap">
                       {formatDate(c.applied_at)}
                     </td>
 
@@ -199,41 +208,85 @@ export default function CandidateTable({
                       <StatusBadge status={c.source} type="source" />
                     </td>
 
-                    {/* AI Score */}
+                    {/* AI Score with subtle progress bar behind */}
                     <td className="py-2.5 px-3">
                       {c.screening_score !== null && c.screening_score !== undefined ? (
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-12 h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-                            <div
-                              className={`h-full ${
-                                c.screening_score >= 70
-                                  ? "bg-emerald-500"
-                                  : c.screening_score >= 40
-                                  ? "bg-amber-500"
-                                  : "bg-rose-500"
-                              }`}
-                              style={{ width: `${Math.min(100, Math.max(0, c.screening_score))}%` }}
-                            />
-                          </div>
-                          <span
-                            className={`font-mono font-bold text-[11px] ${
+                        <div
+                          className={`relative px-2 py-1 rounded border text-xs font-mono font-bold text-center overflow-hidden w-20 shadow-xs ${
+                            c.screening_score >= 70
+                              ? "border-emerald-300 text-emerald-800 bg-emerald-50/40"
+                              : c.screening_score >= 40
+                              ? "border-amber-300 text-amber-800 bg-amber-50/40"
+                              : "border-rose-300 text-rose-800 bg-rose-50/40"
+                          }`}
+                        >
+                          <div
+                            className={`absolute inset-y-0 left-0 transition-all ${
                               c.screening_score >= 70
-                                ? "text-emerald-700"
+                                ? "bg-emerald-200/50"
                                 : c.screening_score >= 40
-                                ? "text-amber-700"
-                                : "text-rose-700"
+                                ? "bg-amber-200/50"
+                                : "bg-rose-200/50"
                             }`}
-                          >
-                            {c.screening_score}
-                          </span>
+                            style={{ width: `${Math.min(100, Math.max(0, c.screening_score))}%` }}
+                          />
+                          <span className="relative z-10">{c.screening_score}/100</span>
                         </div>
                       ) : (
-                        <span className="text-slate-300 text-[11px] italic">Pending</span>
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-500 border border-slate-200">
+                          Pending
+                        </span>
+                      )}
+                    </td>
+
+                    {/* Hard Filter Badge */}
+                    <td className="py-2.5 px-3 whitespace-nowrap">
+                      {isHardFail ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold tracking-wide uppercase bg-rose-100 text-rose-800 border border-rose-300 shadow-xs">
+                          Hard Fail
+                        </span>
+                      ) : c.hard_filter_passed === true ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+                          Passed
+                        </span>
+                      ) : (
+                        <span className="text-slate-300 text-[11px]">—</span>
+                      )}
+                    </td>
+
+                    {/* Matched / Missing Skills Chips */}
+                    <td className="py-2.5 px-3 max-w-[200px]">
+                      {c.matched_skills && c.matched_skills.length > 0 ? (
+                        <div className="flex flex-wrap items-center gap-1">
+                          {c.matched_skills.slice(0, 3).map((skill, idx) => (
+                            <span
+                              key={idx}
+                              className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-emerald-50 text-emerald-700 border border-emerald-200"
+                            >
+                              {skill}
+                            </span>
+                          ))}
+                          {c.matched_skills.length > 3 && (
+                            <span className="text-[10px] text-slate-400 font-medium">
+                              +{c.matched_skills.length - 3}
+                            </span>
+                          )}
+                          {c.missing_skills && c.missing_skills.length > 0 && (
+                            <span
+                              title={`Missing: ${c.missing_skills.join(", ")}`}
+                              className="inline-block px-1.5 py-0.5 rounded text-[10px] bg-rose-50 text-rose-600 border border-rose-200 line-through"
+                            >
+                              {c.missing_skills[0]}
+                            </span>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-300 text-[11px]">—</span>
                       )}
                     </td>
 
                     {/* Current Status */}
-                    <td className="py-2.5 px-3">
+                    <td className="py-2.5 px-3 whitespace-nowrap">
                       <StatusBadge status={c.current_status} type="application" />
                     </td>
 

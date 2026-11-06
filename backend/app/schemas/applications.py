@@ -118,6 +118,9 @@ class ApplicationListItemResponse(BaseModel):
     status_label: str
     status_stage: int
     screening_score: Optional[int] = None
+    hard_filter_passed: Optional[bool] = None
+    matched_skills: Optional[List[str]] = None
+    missing_skills: Optional[List[str]] = None
     resume_file_name: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

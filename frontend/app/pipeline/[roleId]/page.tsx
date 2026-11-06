@@ -60,7 +60,16 @@ export default function RolePipelinePage() {
         }),
       ]);
       setJob(jobData);
-      setCandidates(appsData.items || []);
+      // Default sort by AI screening score descending (unscreened/pending at the end)
+      const sorted = (appsData.items || []).sort((a: ApplicationListItem, b: ApplicationListItem) => {
+        const scoreA = a.screening_score ?? -1;
+        const scoreB = b.screening_score ?? -1;
+        if (scoreB !== scoreA) {
+          return scoreB - scoreA;
+        }
+        return new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime();
+      });
+      setCandidates(sorted);
     } catch (err: any) {
       setError(err.message || "Failed to load candidate pipeline");
     } finally {

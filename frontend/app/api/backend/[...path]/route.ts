@@ -51,9 +51,16 @@ async function proxyRequest(request: NextRequest, { params }: { params: { path: 
       return response;
     } else {
       const rawText = await backendRes.text();
+      const resHeaders: Record<string, string> = {
+        "Content-Type": resContentType || "text/plain",
+      };
+      const contentDisp = backendRes.headers.get("content-disposition");
+      if (contentDisp) {
+        resHeaders["Content-Disposition"] = contentDisp;
+      }
       const response = new NextResponse(rawText, {
         status: backendRes.status,
-        headers: { "Content-Type": resContentType || "text/plain" },
+        headers: resHeaders,
       });
       if (backendRes.status === 401) {
         response.cookies.delete("hrms_token");

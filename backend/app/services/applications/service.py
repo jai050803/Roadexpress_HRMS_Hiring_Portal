@@ -600,6 +600,9 @@ class ApplicationService:
                     status_label=meta["label"],
                     status_stage=meta["stage"],
                     screening_score=app.screening_result.score if app.screening_result else None,
+                    hard_filter_passed=app.screening_result.hard_filter_passed if app.screening_result else None,
+                    matched_skills=app.screening_result.matched_skills if app.screening_result else None,
+                    missing_skills=app.screening_result.missing_skills if app.screening_result else None,
                     resume_file_name=app.resume.file_name if app.resume else None,
                 )
             )
