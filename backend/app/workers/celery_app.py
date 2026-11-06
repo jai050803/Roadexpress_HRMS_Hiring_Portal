@@ -17,6 +17,10 @@ celery.conf.update(
     worker_prefetch_multiplier=1,
 )
 
+# Register task modules
+import app.workers.tasks  # noqa: F401
+import app.workers.interview_tasks  # noqa: F401
+
 # Placeholder beat schedule for future interview reminders
 celery.conf.beat_schedule = {
     "interview-reminder-24h": {

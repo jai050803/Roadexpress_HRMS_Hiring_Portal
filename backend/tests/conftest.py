@@ -12,7 +12,14 @@ from sqlalchemy.pool import NullPool
 
 # Test Environment Variables
 os.environ["APP_ENV"] = "test"
-os.environ["DATABASE_URL"] = "postgresql+asyncpg://postgres:2301420045@localhost:5432/hrms_test_db"
+is_in_docker = os.path.exists("/.dockerenv")
+db_host = "postgres" if is_in_docker else "localhost"
+db_user = "hrms_user" if is_in_docker else "postgres"
+db_pass = "hrms_pass" if is_in_docker else "2301420045"
+default_test_db = f"postgresql+asyncpg://{db_user}:{db_pass}@{db_host}:5432/hrms_test_db"
+
+TEST_DATABASE_URL = os.environ.get("TEST_DATABASE_URL", default_test_db)
+os.environ["DATABASE_URL"] = TEST_DATABASE_URL
 os.environ["STORAGE_PROVIDER"] = "local"
 os.environ["EMAIL_PROVIDER"] = "smtp"
 os.environ["ENABLE_PGVECTOR"] = "false"
@@ -31,8 +38,6 @@ from app.models.resume import Resume
 from app.models.screening_result import ScreeningResult
 from app.models.status_history import ApplicationStatusHistory
 from app.services.auth import auth_service
-
-TEST_DATABASE_URL = "postgresql+asyncpg://postgres:2301420045@localhost:5432/hrms_test_db"
 
 # Use NullPool to avoid cross-loop connection sharing issues in async tests
 test_engine = create_async_engine(

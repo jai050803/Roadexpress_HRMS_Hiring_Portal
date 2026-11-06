@@ -7,7 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.application import Application
 from app.models.resume import Resume
 from app.utils.storage import generate_presigned_download_url, save_resume_file
-from app.workers.tasks import parse_resume
+from app.workers.tasks import parse_resume_task
 
 
 class ResumeService:
@@ -50,9 +50,9 @@ class ResumeService:
             application.resume_id = resume.id
             await db.flush()
 
-        # Enqueue Celery task stub for Phase 2 parsing
+        # Enqueue Celery task for Phase 2 parsing
         try:
-            parse_resume.delay(str(resume.id))
+            parse_resume_task.delay(str(resume.id))
         except Exception:
             # Non-blocking if Celery worker/broker is disconnected in dev/test
             pass

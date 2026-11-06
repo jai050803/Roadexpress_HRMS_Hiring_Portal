@@ -26,6 +26,7 @@ SUBJECT_MAPPING = {
     "applied_ack": "Application Received: {job_title} | Road Express ({reference_number})",
     "shortlisted": "Update: You have been shortlisted for {job_title} | Road Express",
     "rejected": "Road Express Application Update: {job_title}",
+    "parse_failed_hr_alert": "HR Alert: Resume Parsing Failed for {job_title} | {candidate_name}",
 }
 
 
@@ -111,11 +112,14 @@ class NotificationService:
 
                 template_vars = {
                     "candidate_name": candidate_name,
+                    "candidate_email": candidate_email,
+                    "candidate_id": str(application.candidate.id),
                     "job_title": job_title,
                     "department": department,
                     "reference_number": ref_number,
                     "tracking_url": tracking_url,
                     "portal_url": portal_url,
+                    "hr_portal_url": "http://localhost:3001",
                     "custom_message": custom_message,
                 }
                 html_body = template.render(**template_vars)
@@ -127,18 +131,25 @@ class NotificationService:
                 subject = subject_pattern.format(
                     job_title=job_title,
                     reference_number=ref_number,
+                    candidate_name=candidate_name,
                 )
 
-                # 4. Send Email via Client
+                # 4. Determine recipient: HR for internal alerts, candidate for normal pipeline
+                if notification_type == "parse_failed_hr_alert":
+                    recipient_email = settings.EMAIL_FROM_ADDRESS or settings.SMTP_USER or "hr@roadexpress.com"
+                else:
+                    recipient_email = candidate_email
+
+                # Send Email via Client
                 EmailClient.send_email(
-                    to_email=candidate_email,
+                    to_email=recipient_email,
                     subject=subject,
                     html_content=html_body,
                 )
 
                 # 5. Update Status to 'sent'
                 await cls._update_status(db, notification_id, "sent")
-                logger.info(f"Notification '{notification_type}' sent to {candidate_email}")
+                logger.info(f"Notification '{notification_type}' sent to {recipient_email}")
                 return True
 
             except Exception as e:

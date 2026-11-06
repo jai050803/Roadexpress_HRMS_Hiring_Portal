@@ -187,3 +187,44 @@ def generate_presigned_download_url(
     except Exception as e:
         # If presigned URL generation fails, return the internal key
         return f"/resumes/file/{key}"
+
+
+def download_resume_file(file_url: str) -> bytes:
+    """
+    Downloads resume file bytes given an internal storage URL (s3://bucket/key or local path).
+    Tries S3/MinIO first; falls back to local storage if needed.
+    """
+    bucket = settings.S3_BUCKET_NAME
+    key = file_url
+
+    if file_url.startswith("s3://"):
+        parts = file_url[5:].split("/", 1)
+        if len(parts) == 2:
+            bucket, key = parts[0], parts[1]
+
+    # 1. Try S3 / MinIO
+    try:
+        s3 = get_s3_client()
+        response = s3.get_object(Bucket=bucket, Key=key)
+        return response["Body"].read()
+    except Exception:
+        pass
+
+    # 2. Check local fallback storage
+    # File keys are structured as: resumes/{job_role_id}/{application_id}/{filename}
+    parts = key.split("/")
+    if len(parts) >= 4 and parts[0] == "resumes":
+        local_name = f"{parts[1]}_{parts[2]}_{parts[3]}"
+        local_path = LOCAL_STORAGE_DIR / local_name
+        if local_path.exists():
+            return local_path.read_bytes()
+
+    direct_local = LOCAL_STORAGE_DIR / key
+    if direct_local.exists():
+        return direct_local.read_bytes()
+
+    if Path(key).exists():
+        return Path(key).read_bytes()
+
+    raise FileNotFoundError(f"Resume file not found in S3/MinIO ({bucket}/{key}) or local disk.")
+
