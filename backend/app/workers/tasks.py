@@ -8,6 +8,7 @@ import app.database
 from app.models.resume import Resume
 from app.services.notifications.service import NotificationService
 from app.services.parsing.service import ParsingService
+from app.services.screening.service import ScreeningService
 from app.workers.celery_app import celery
 
 logger = logging.getLogger(__name__)
@@ -103,13 +104,59 @@ def parse_resume(self, resume_id: str):
     return parse_resume_task(resume_id)
 
 
-@celery.task(name="run_screening_task", bind=True)
+@celery.task(name="run_screening", bind=True)
+def run_screening(self, application_id: str):
+    return run_screening_task(application_id)
+
+
+@celery.task(
+    name="run_screening_task",
+    bind=True,
+    max_retries=3,
+    default_retry_delay=5,
+)
 def run_screening_task(self, application_id: str):
     """
-    Celery task stub for Phase 2 AI Screening.
+    Celery task that scores an application against its job role using Gemini.
+    - Fully idempotent: if screening_results exists, returns existing result.
+    - Deterministically enforces hard filter on minimum experience.
+    - Transitions application status APPLIED -> SCREENED.
+    - Advisory only: never shortlists or rejects.
+    - If validation fails after 3 retries, writes fallback result (score=0, hard_filter_passed=False)
+      and still transitions to SCREENED.
     """
-    logger.info(f"Screening task enqueued for application {application_id}")
-    return {"status": "enqueued", "application_id": application_id}
+    app_uuid = uuid.UUID(application_id)
+    try:
+        res = asyncio.run(ScreeningService.screen_application(app_uuid))
+        return {
+            "status": "done",
+            "application_id": application_id,
+            "score": res.score,
+            "hard_filter_passed": res.hard_filter_passed,
+        }
+    except Exception as exc:
+        retries_exhausted = self.request.retries >= self.max_retries
+        if retries_exhausted:
+            logger.error(
+                f"run_screening_task failed definitively after {self.max_retries} retries "
+                f"for application {application_id}: {exc}. Writing fallback result."
+            )
+            # Write required fallback result and transition to SCREENED
+            fallback = asyncio.run(
+                ScreeningService.record_failed_screening_fallback(app_uuid, str(exc))
+            )
+            return {
+                "status": "fallback",
+                "application_id": application_id,
+                "score": fallback.score,
+                "hard_filter_passed": fallback.hard_filter_passed,
+            }
+
+        logger.warning(
+            f"run_screening_task retry {self.request.retries + 1}/{self.max_retries} "
+            f"for application {application_id} due to: {exc}"
+        )
+        raise self.retry(exc=exc)
 
 
 @celery.task(name="send_notification_task", bind=True)

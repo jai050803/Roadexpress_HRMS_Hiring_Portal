@@ -56,7 +56,11 @@ class ScreeningResultInfo(BaseModel):
     experience_years_detected: Optional[int] = None
     recommendation: Optional[str] = None
     reasoning: Optional[str] = None
-    created_at: datetime
+    llm_rationale: Optional[str] = None
+    decided_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+
+    model_config = ConfigDict(from_attributes=True)
 
     model_config = ConfigDict(from_attributes=True)
 

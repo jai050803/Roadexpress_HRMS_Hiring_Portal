@@ -475,13 +475,15 @@ class ApplicationService:
             screening_info = ScreeningResultInfo(
                 id=app.screening_result.id,
                 score=app.screening_result.score,
-                matched_skills=app.screening_result.matched_skills,
-                missing_skills=app.screening_result.missing_skills,
+                matched_skills=app.screening_result.matched_skills or [],
+                missing_skills=app.screening_result.missing_skills or [],
                 hard_filter_passed=app.screening_result.hard_filter_passed,
-                experience_years_detected=app.screening_result.experience_years_detected,
-                recommendation=app.screening_result.recommendation,
-                reasoning=app.screening_result.reasoning,
-                created_at=app.screening_result.created_at,
+                experience_years_detected=getattr(app.screening_result, "experience_years_detected", None),
+                recommendation=getattr(app.screening_result, "recommendation", None),
+                reasoning=app.screening_result.llm_rationale,
+                llm_rationale=app.screening_result.llm_rationale,
+                decided_at=app.screening_result.decided_at,
+                created_at=app.screening_result.decided_at,
             )
 
         history_items = [
