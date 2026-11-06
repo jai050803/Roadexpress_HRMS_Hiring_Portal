@@ -1,7 +1,18 @@
 import uuid
-from datetime import datetime
+from datetime import date, datetime
 from typing import List, Optional
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
+
+
+class CVBankFilterParams(BaseModel):
+    job_role_id: Optional[uuid.UUID] = Field(None, description="Filter by job role")
+    status: Optional[str] = Field(None, description="Filter by application status")
+    min_score: Optional[int] = Field(None, ge=0, le=100, description="Minimum screening score")
+    source: Optional[str] = Field(None, description="Filter by source (portal, linkedin, email_upload)")
+    skill: Optional[str] = Field(None, description="Filter by detected skill keyword in parsed resume")
+    from_date: Optional[date] = Field(None, description="Applied from date (YYYY-MM-DD)")
+    to_date: Optional[date] = Field(None, description="Applied to date (YYYY-MM-DD)")
+    search: Optional[str] = Field(None, description="Search candidate name or email (ILIKE)")
 
 
 class CVBankItem(BaseModel):
