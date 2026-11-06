@@ -60,6 +60,11 @@ services:
       - "${BACKEND_PORT:-8000}:8000"
     env_file:
       - ./backend/.env
+    environment:
+      - ENABLE_PGVECTOR=true
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-hrms_user}:${POSTGRES_PASSWORD:-hrms_pass}@postgres:5432/${POSTGRES_DB:-hrms_db}
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT_URL=http://minio:9000
     volumes:
       - ./backend:/app
     depends_on:
@@ -69,7 +74,11 @@ services:
         condition: service_healthy
       minio:
         condition: service_started
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+    command: >
+      sh -c "alembic upgrade head &&
+             python scripts/create_admin.py --name 'HR Admin' --email 'admin@roadexpress.com' --password 'AdminPass123!' &&
+             python scripts/seed_initial_jobs.py &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   celery-worker:
     build:
@@ -79,6 +88,11 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    environment:
+      - ENABLE_PGVECTOR=true
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-hrms_user}:${POSTGRES_PASSWORD:-hrms_pass}@postgres:5432/${POSTGRES_DB:-hrms_db}
+      - REDIS_URL=redis://redis:6379/0
+      - MINIO_ENDPOINT_URL=http://minio:9000
     volumes:
       - ./backend:/app
     depends_on:
@@ -98,6 +112,10 @@ services:
     restart: unless-stopped
     env_file:
       - ./backend/.env
+    environment:
+      - ENABLE_PGVECTOR=true
+      - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-hrms_user}:${POSTGRES_PASSWORD:-hrms_pass}@postgres:5432/${POSTGRES_DB:-hrms_db}
+      - REDIS_URL=redis://redis:6379/0
     volumes:
       - ./backend:/app
     depends_on:
@@ -115,6 +133,8 @@ services:
       - "${FLOWER_PORT:-5555}:5555"
     env_file:
       - ./backend/.env
+    environment:
+      - REDIS_URL=redis://redis:6379/0
     depends_on:
       redis:
         condition: service_healthy
@@ -136,6 +156,8 @@ services:
       - /app/.next
     environment:
       - WATCHPACK_POLLING=true
+      - INTERNAL_API_URL=http://backend:8000/v1
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/v1
     command: npm run dev
 
   user-frontend:
@@ -154,6 +176,8 @@ services:
       - /app/.next
     environment:
       - WATCHPACK_POLLING=true
+      - INTERNAL_API_URL=http://backend:8000/v1
+      - NEXT_PUBLIC_API_URL=http://localhost:8000/v1
     command: npm run dev
 
 volumes:
