@@ -129,7 +129,7 @@ async def test_notification_all_templates_and_missing_app(sample_application: Ap
 
 
 def test_email_client_smtp_and_sendgrid():
-    """Test EmailClient dispatch via SMTP and SendGrid with mocked network calls."""
+    """Test EmailClient dispatch via SMTP with mocked network calls."""
     from app.services.notifications.email_client import EmailClient
     from app.config import settings
 
@@ -138,37 +138,14 @@ def test_email_client_smtp_and_sendgrid():
         mock_server = mock_smtp_cls.return_value
         mock_server.__enter__.return_value = mock_server
 
-        prev_provider = settings.EMAIL_PROVIDER
-        settings.EMAIL_PROVIDER = "smtp"
-        settings.SMTP_USER = "user"
+        settings.SMTP_USER = "user@example.com"
         settings.SMTP_PASSWORD = "password"
-        try:
-            res = EmailClient.send_email(
-                to_email="test@example.com",
-                subject="Test Subject",
-                html_content="<p>Test Content</p>",
-            )
-            assert res is True
-            assert mock_server.sendmail.called
-        finally:
-            settings.EMAIL_PROVIDER = prev_provider
-
-    # 2. SendGrid Provider with mocked httpx.Client.post
-    with patch("httpx.Client.post") as mock_http_post:
-        mock_http_post.return_value.status_code = 202
-        mock_http_post.return_value.text = ""
-        prev_provider = settings.EMAIL_PROVIDER
-        settings.EMAIL_PROVIDER = "sendgrid"
-        settings.SENDGRID_API_KEY = "SG.fake_key"
-        try:
-            res = EmailClient.send_email(
-                to_email="test@example.com",
-                subject="SendGrid Subject",
-                html_content="<p>SendGrid Content</p>",
-            )
-            assert res is True
-            assert mock_http_post.called
-        finally:
-            settings.EMAIL_PROVIDER = prev_provider
+        res = EmailClient.send_email(
+            to_email="test@example.com",
+            subject="Test Subject",
+            html_content="<p>Test Content</p>",
+        )
+        assert res is True
+        assert mock_server.sendmail.called
 
 

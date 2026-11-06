@@ -31,18 +31,19 @@ class Settings(BaseSettings):
     MINIO_PUBLIC_URL: Optional[str] = "http://localhost:9000"
 
     # Email
-    EMAIL_PROVIDER: str = "smtp"  # smtp | sendgrid
+    EMAIL_PROVIDER: str = "smtp"
     SENDGRID_API_KEY: Optional[str] = None
     SMTP_HOST: Optional[str] = "smtp.gmail.com"
     SMTP_PORT: int = 587
-    SMTP_USER: Optional[str] = "hr@roadexpress.com"
+    SMTP_USER: Optional[str] = None
     SMTP_PASSWORD: Optional[str] = None
+    SMTP_PASS: Optional[str] = None
     EMAIL_FROM_ADDRESS: str = "hr@roadexpress.com"
     EMAIL_FROM_NAME: str = "Road Express HR Team"
 
     # AI Screening
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-1.5-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash"
 
     # Google Calendar
     GOOGLE_SERVICE_ACCOUNT_JSON: Optional[str] = None
@@ -70,6 +71,35 @@ class Settings(BaseSettings):
     @property
     def allowed_resume_types_list(self) -> List[str]:
         return [t.strip() for t in self.ALLOWED_RESUME_TYPES.split(",") if t.strip()]
+
+    @property
+    def clean_smtp_host(self) -> str:
+        return (self.SMTP_HOST or "smtp.gmail.com").strip().strip('"').strip("'")
+
+    @property
+    def clean_smtp_user(self) -> Optional[str]:
+        if not self.SMTP_USER:
+            return None
+        return self.SMTP_USER.strip().strip('"').strip("'")
+
+    @property
+    def clean_smtp_password(self) -> Optional[str]:
+        pwd = self.SMTP_PASSWORD or self.SMTP_PASS
+        if not pwd:
+            return None
+        return pwd.strip().strip('"').strip("'")
+
+    @property
+    def clean_gemini_api_key(self) -> Optional[str]:
+        if not self.GEMINI_API_KEY:
+            return None
+        return self.GEMINI_API_KEY.strip().strip('"').strip("'")
+
+    @property
+    def clean_gemini_model(self) -> str:
+        if not self.GEMINI_MODEL:
+            return "gemini-3.5-flash"
+        return self.GEMINI_MODEL.strip().strip('"').strip("'")
 
 
 settings = Settings()

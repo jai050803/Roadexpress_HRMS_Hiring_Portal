@@ -17,20 +17,28 @@ class ScreeningOutputSchema(BaseModel):
 
 
 SCREENING_SYSTEM_PROMPT = """You are an expert recruitment and talent screening evaluator for Road Express, a leading logistics & supply chain corporation.
-Your responsibility is to objectively evaluate a candidate's structured resume against the target job role's requirements.
+Your responsibility is to objectively evaluate a candidate's structured resume against the target job role.
 
 Evaluation Instructions:
-1. Skills Analysis: Compare candidate's skills with the job role's required skills.
-   - matched_skills: Array of skills that candidate clearly has (normalized to lowercase).
-   - missing_skills: Array of required skills that candidate lacks (normalized to lowercase).
-2. Experience Relevance: Assess depth and relevance in corporate logistics, supply chain, finance, technology, or management.
-3. Scoring Criteria (Strict 0 to 100 integer):
-   - 85-100: Excellent fit. Possesses virtually all required skills and strong relevant experience.
-   - 70-84: Good fit. Possesses core required skills with minor gaps; capable of performing the role.
-   - 50-69: Moderate fit. Has some transferable skills, but noticeable gaps in required competencies.
-   - 0-49: Poor fit. Missing crucial required skills and insufficient background.
-4. llm_rationale: 2 to 4 concise sentences summarizing candidate's fit, highlighting key strengths and notable gaps.
-5. hard_filter_passed: Initial assessment whether candidate appears to meet baseline qualifications (this will be deterministically verified against experience years).
+1. Job Role & JD Evaluation:
+   - Compare candidate's qualifications, skills, and background against the job role's title, department, responsibilities, and JD text.
+   - If the Job Description (JD) lacks full details or is brief, thoroughly evaluate the candidate's complete resume working history:
+     * Past work experiences (roles, companies, duration, responsibilities, and achievements).
+     * Education background (degree, field of study, relevance).
+     * Technical, operational, and domain skills.
+     * Career progression and depth of expertise relevant to that particular job role.
+2. Skills Matching:
+   - matched_skills: Array of skills from the candidate's resume that align with this job role (normalized to lowercase).
+   - missing_skills: Array of required or standard expected skills for this role that the candidate lacks (normalized to lowercase).
+3. Experience Relevance:
+   - Assess depth and relevance in corporate logistics, supply chain, finance, technology, operations, or management.
+4. Scoring Criteria (Strict 0 to 100 integer):
+   - 85-100: Excellent fit. Possesses virtually all required competencies and strong relevant work experience/education.
+   - 70-84: Good fit. Possesses core relevant experience and skills with minor gaps; capable of performing the role.
+   - 50-69: Moderate fit. Has transferable skills/education, but noticeable gaps in direct experience or core skills.
+   - 0-49: Poor fit. Missing crucial competencies and insufficient background for the target role.
+5. llm_rationale: 2 to 4 concise sentences summarizing candidate's fit, highlighting their past experience, education, key strengths, and notable gaps for this specific job role.
+6. hard_filter_passed: Initial assessment whether candidate satisfies minimum experience/qualifications for the role.
 
 Output Format:
 Return strictly valid JSON conforming to the schema. No markdown code fences, no extra preamble or commentary.
@@ -111,7 +119,7 @@ def call_gemini_screening(
     Retries up to max_retries on transient or schema validation failures.
     Falls back to deterministic evaluation if GEMINI_API_KEY is not set.
     """
-    api_key = settings.GEMINI_API_KEY
+    api_key = settings.clean_gemini_api_key
     is_dummy_key = not api_key or api_key.strip() in ("", "your-gemini-api-key", "change-me")
 
     if is_dummy_key:
@@ -138,6 +146,7 @@ def call_gemini_screening(
     user_content = f"Evaluate this candidate application against the target role:\n\n{json.dumps(prompt_data, indent=2)}"
 
     last_error: Optional[Exception] = None
+    model_name = settings.clean_gemini_model
     for attempt in range(1, max_retries + 1):
         try:
             from google import genai
@@ -145,7 +154,7 @@ def call_gemini_screening(
 
             client = genai.Client(api_key=api_key)
             response = client.models.generate_content(
-                model=settings.GEMINI_MODEL or "gemini-1.5-flash",
+                model=model_name,
                 contents=user_content,
                 config=types.GenerateContentConfig(
                     system_instruction=SCREENING_SYSTEM_PROMPT,

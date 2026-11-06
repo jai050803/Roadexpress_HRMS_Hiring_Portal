@@ -114,7 +114,7 @@ def parse_resume_text_with_gemini(raw_text: str, max_retries: int = 3) -> Dict[s
     Includes retry logic for malformed responses and falls back gracefully to deterministic parsing
     if Gemini is unconfigured or unavailable.
     """
-    api_key = settings.GEMINI_API_KEY
+    api_key = settings.clean_gemini_api_key
     is_dummy_key = not api_key or api_key.strip() in ("", "your-gemini-api-key", "change-me")
 
     if is_dummy_key:
@@ -123,6 +123,7 @@ def parse_resume_text_with_gemini(raw_text: str, max_retries: int = 3) -> Dict[s
 
     # Attempt structured generation with Google GenAI
     last_error: Optional[Exception] = None
+    model_name = settings.clean_gemini_model
     for attempt in range(1, max_retries + 1):
         try:
             from google import genai
@@ -132,7 +133,7 @@ def parse_resume_text_with_gemini(raw_text: str, max_retries: int = 3) -> Dict[s
             prompt = f"Extract structured resume information from the following text:\n\n{raw_text}"
 
             response = client.models.generate_content(
-                model=settings.GEMINI_MODEL or "gemini-1.5-flash",
+                model=model_name,
                 contents=prompt,
                 config=types.GenerateContentConfig(
                     system_instruction=RESUME_EXTRACTION_SYSTEM_PROMPT,

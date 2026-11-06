@@ -35,6 +35,15 @@ async def _set_resume_failed(resume_id: uuid.UUID, error_message: str):
         await db.commit()
 
 
+async def _execute_parse_flow(resume_uuid: uuid.UUID):
+    app_id = await _get_application_id_for_resume(resume_uuid)
+    try:
+        parsed_result = await ParsingService.parse_resume(resume_uuid)
+        return app_id, parsed_result, None
+    except Exception as e:
+        return app_id, None, e
+
+
 @celery.task(
     name="parse_resume_task",
     bind=True,
@@ -52,21 +61,10 @@ def parse_resume_task(self, resume_id: str):
     - Never modifies applications table directly.
     """
     resume_uuid = uuid.UUID(resume_id)
-    application_id = asyncio.run(_get_application_id_for_resume(resume_uuid))
+    application_id, parsed_result, err = asyncio.run(_execute_parse_flow(resume_uuid))
 
-    try:
-        parsed_result = asyncio.run(ParsingService.parse_resume(resume_uuid))
-
-        # Enqueue Phase 2 AI screening task on success
-        if application_id:
-            try:
-                run_screening_task.delay(str(application_id))
-            except Exception as queue_err:
-                logger.warning(f"Could not enqueue run_screening_task: {queue_err}")
-
-        return {"status": "done", "resume_id": resume_id, "data": parsed_result}
-
-    except Exception as exc:
+    if err:
+        exc = err
         is_unrecoverable = isinstance(exc, (ValueError, FileNotFoundError))
         retries_exhausted = self.request.retries >= self.max_retries
 
@@ -96,6 +94,15 @@ def parse_resume_task(self, resume_id: str):
             f"for resume {resume_id} due to: {exc}"
         )
         raise self.retry(exc=exc)
+
+    # On success: enqueue Phase 2 AI screening task
+    if application_id:
+        try:
+            run_screening_task.delay(str(application_id))
+        except Exception as queue_err:
+            logger.warning(f"Could not enqueue run_screening_task: {queue_err}")
+
+    return {"status": "done", "resume_id": resume_id, "data": parsed_result}
 
 
 # Backward-compatible alias for existing callers
