@@ -23,6 +23,7 @@ import {
   getJob,
   listApplications,
   rejectApplication,
+  screenApplication,
   shortlistApplication,
 } from "@/lib/api";
 import { ApplicationListItem, JobRole, RejectionReason } from "@/lib/types";
@@ -76,24 +77,53 @@ export default function RolePipelinePage() {
     loadPipeline();
   };
 
-  const handleShortlist = async (id: string) => {
-    await shortlistApplication(id);
-    await loadPipeline();
+  const handleShortlist = async (id: string, currentStatus?: string) => {
+    try {
+      if (currentStatus === "APPLIED") {
+        await screenApplication(id, "Screened on HR review");
+      }
+      await shortlistApplication(id);
+      await loadPipeline();
+    } catch (err: any) {
+      alert(err.message || "Failed to shortlist candidate");
+    }
   };
 
   const handleReject = async (id: string, reason: RejectionReason, remarks: string) => {
-    await rejectApplication(id, reason, remarks);
-    await loadPipeline();
+    try {
+      await rejectApplication(id, reason, remarks);
+      await loadPipeline();
+    } catch (err: any) {
+      alert(err.message || "Failed to reject candidate");
+    }
   };
 
   const handleBulkShortlist = async (ids: string[]) => {
-    await bulkShortlist(ids);
-    await loadPipeline();
+    try {
+      // Auto-screen any candidate in APPLIED status before bulk shortlisting
+      const appliedCandidates = candidates.filter(
+        (c) => ids.includes(c.id) && c.current_status === "APPLIED"
+      );
+      for (const c of appliedCandidates) {
+        try {
+          await screenApplication(c.id, "Auto-screened on bulk shortlist");
+        } catch {}
+      }
+
+      await bulkShortlist(ids);
+      await loadPipeline();
+    } catch (err: any) {
+      alert(err.message || "Failed to bulk shortlist");
+    }
   };
 
   const handleBulkReject = async (ids: string[], reason: RejectionReason, remarks: string) => {
-    await bulkReject(ids, reason, remarks);
-    await loadPipeline();
+    try {
+      await bulkReject(ids, reason, remarks);
+      await loadPipeline();
+    } catch (err: any) {
+      alert(err.message || "Failed to bulk reject");
+    }
   };
 
   return (

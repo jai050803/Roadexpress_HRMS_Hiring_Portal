@@ -160,6 +160,29 @@ async def save_resume_file(
     return stored_internal_url, safe_filename, file_size, file_hash
 
 
+def get_public_s3_client():
+    """
+    Returns an S3 client configured with the browser-facing public endpoint (e.g. http://localhost:9000)
+    so presigned URLs are directly downloadable from the user's browser outside Docker.
+    """
+    if settings.STORAGE_PROVIDER == "minio":
+        public_endpoint = getattr(settings, "MINIO_PUBLIC_URL", None) or "http://localhost:9000"
+        return boto3.client(
+            "s3",
+            endpoint_url=public_endpoint,
+            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
+            config=Config(
+                signature_version="s3v4",
+                connect_timeout=2,
+                read_timeout=5,
+                retries={"max_attempts": 2},
+            ),
+            region_name=settings.AWS_REGION or "ap-south-1",
+        )
+    return get_s3_client()
+
+
 def generate_presigned_download_url(
     file_url: str,
     expires_in: int = 900,
@@ -167,6 +190,7 @@ def generate_presigned_download_url(
     """
     Generates a pre-signed download URL that expires in 15 minutes (default 900 seconds).
     Accepts internal S3 URL in format s3://{bucket}/{key}.
+    Uses browser-facing public endpoint (e.g. localhost:9000) for MinIO so the link works in user browsers.
     """
     bucket = settings.S3_BUCKET_NAME
     key = file_url
@@ -177,7 +201,7 @@ def generate_presigned_download_url(
             bucket, key = parts[0], parts[1]
 
     try:
-        s3 = get_s3_client()
+        s3 = get_public_s3_client()
         url = s3.generate_presigned_url(
             "get_object",
             Params={"Bucket": bucket, "Key": key},

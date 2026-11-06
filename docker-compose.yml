@@ -65,6 +65,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-hrms_user}:${POSTGRES_PASSWORD:-hrms_pass}@postgres:5432/${POSTGRES_DB:-hrms_db}
       - REDIS_URL=redis://redis:6379/0
       - MINIO_ENDPOINT_URL=http://minio:9000
+      - MINIO_PUBLIC_URL=http://localhost:9000
     volumes:
       - ./backend:/app
     depends_on:
@@ -93,6 +94,7 @@ services:
       - DATABASE_URL=postgresql+asyncpg://${POSTGRES_USER:-hrms_user}:${POSTGRES_PASSWORD:-hrms_pass}@postgres:5432/${POSTGRES_DB:-hrms_db}
       - REDIS_URL=redis://redis:6379/0
       - MINIO_ENDPOINT_URL=http://minio:9000
+      - MINIO_PUBLIC_URL=http://localhost:9000
     volumes:
       - ./backend:/app
     depends_on:

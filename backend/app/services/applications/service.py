@@ -613,6 +613,48 @@ class ApplicationService:
         )
 
     @classmethod
+    async def screen(
+        cls,
+        db: AsyncSession,
+        application_id: uuid.UUID,
+        hr_user_id: Optional[uuid.UUID] = None,
+        remarks: Optional[str] = None,
+        status_version: Optional[int] = None,
+    ) -> ApplicationDetailResponse:
+        """
+        Transition application to SCREENED.
+        Transitions from APPLIED.
+        """
+        stmt = (
+            select(Application)
+            .options(
+                joinedload(Application.candidate),
+                joinedload(Application.job_role),
+            )
+            .where(Application.id == application_id)
+        )
+        res = await db.execute(stmt)
+        application = res.scalar_one_or_none()
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "not_found", "message": "Application not found."},
+            )
+
+        await cls._transition_status(
+            db=db,
+            application=application,
+            to_status="SCREENED",
+            reason=None,
+            remarks=remarks or "Application screened",
+            changed_by=hr_user_id,
+            expected_version=status_version,
+        )
+
+        await db.commit()
+        return await cls.get_application(db, application_id)
+
+    @classmethod
     async def shortlist(
         cls,
         db: AsyncSession,

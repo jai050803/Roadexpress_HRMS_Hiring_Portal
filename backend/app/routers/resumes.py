@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Depends, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, Response, status
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -9,6 +9,7 @@ from app.middleware.auth import require_hr_user
 from app.models.hr_user import HRUser
 from app.schemas.resumes import PresignedUrlResponse
 from app.services.resumes.service import ResumeService
+from app.utils.storage import download_resume_file
 
 router = APIRouter(prefix="/resumes", tags=["Resumes"])
 
@@ -77,3 +78,42 @@ async def download_resume(
         download_url=url,
         expires_in_seconds=900,
     )
+
+
+@router.get(
+    "/{id}/file",
+    summary="Directly stream the resume PDF bytes (HR only)",
+)
+async def stream_resume_file(
+    id: uuid.UUID,
+    current_user: HRUser = Depends(require_hr_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Directly streams the candidate resume PDF file with proper headers.
+    Acts as a secure server-side proxy so HR can view/download resumes without direct S3/MinIO access.
+    """
+    resume = await ResumeService.get_resume(db, id)
+    if not resume:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "not_found", "message": "Resume record not found."},
+        )
+
+    try:
+        content = download_resume_file(resume.file_url)
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={"error": "file_not_found", "message": f"Resume file could not be retrieved: {str(e)}"},
+        )
+
+    safe_name = resume.file_name or "resume.pdf"
+    return Response(
+        content=content,
+        media_type="application/pdf",
+        headers={
+            "Content-Disposition": f'inline; filename="{safe_name}"',
+        },
+    )
+

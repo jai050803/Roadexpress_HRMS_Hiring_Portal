@@ -205,6 +205,33 @@ async def get_application_details(
 
 
 @router.patch(
+    "/{id}/screen",
+    response_model=ApplicationDetailResponse,
+    summary="Mark an application as SCREENED (HR only)",
+)
+async def screen_application(
+    id: uuid.UUID,
+    payload: Optional[ShortlistRequest] = Body(default=None),
+    current_user: HRUser = Depends(require_hr_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Transitions application status from APPLIED to SCREENED.
+    Enforces optimistic locking if status_version is provided.
+    Logs transition in application_status_history.
+    """
+    remarks = payload.remarks if payload else None
+    status_version = payload.status_version if payload else None
+    return await ApplicationService.screen(
+        db=db,
+        application_id=id,
+        hr_user_id=current_user.id,
+        remarks=remarks,
+        status_version=status_version,
+    )
+
+
+@router.patch(
     "/{id}/shortlist",
     response_model=ApplicationDetailResponse,
     summary="Shortlist an application (HR only)",

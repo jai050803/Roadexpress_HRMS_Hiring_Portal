@@ -29,6 +29,7 @@ import {
   getApplication,
   getResumePresignedUrl,
   rejectApplication,
+  screenApplication,
   shortlistApplication,
 } from "@/lib/api";
 import { ApplicationDetail, RejectionReason } from "@/lib/types";
@@ -80,7 +81,10 @@ export default function CandidateProfilePage() {
   const handleShortlist = async () => {
     try {
       setActionLoading(true);
-      await shortlistApplication(applicationId, "Shortlisted from candidate profile view", application?.status_version);
+      if (application?.current_status === "APPLIED") {
+        await screenApplication(applicationId, "Screened on HR review", application?.status_version);
+      }
+      await shortlistApplication(applicationId, "Shortlisted from candidate profile view");
       await loadData();
     } catch (err: any) {
       alert(err.message || "Failed to shortlist candidate");

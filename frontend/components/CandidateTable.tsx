@@ -19,7 +19,7 @@ import RejectionModal from "./RejectionModal";
 
 interface CandidateTableProps {
   candidates: ApplicationListItem[];
-  onShortlist: (id: string) => Promise<void>;
+  onShortlist: (id: string, currentStatus?: string) => Promise<void>;
   onReject: (id: string, reason: RejectionReason, remarks: string) => Promise<void>;
   onBulkShortlist: (ids: string[]) => Promise<void>;
   onBulkReject: (ids: string[], reason: RejectionReason, remarks: string) => Promise<void>;
@@ -251,8 +251,8 @@ export default function CandidateTable({
                         {!isTerminal && c.current_status !== "SHORTLISTED" && (
                           <button
                             type="button"
-                            onClick={() => onShortlist(c.id)}
-                            title="Shortlist"
+                            onClick={() => onShortlist(c.id, c.current_status)}
+                            title={c.current_status === "APPLIED" ? "Screen & Shortlist" : "Shortlist"}
                             className="p-1 text-emerald-600 hover:text-emerald-800 hover:bg-emerald-50 rounded transition"
                           >
                             <CheckCircle2 className="w-3.5 h-3.5" />

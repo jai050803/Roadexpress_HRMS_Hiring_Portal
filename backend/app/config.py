@@ -28,6 +28,7 @@ class Settings(BaseSettings):
     AWS_REGION: str = "ap-south-1"
     S3_BUCKET_NAME: str = "road-express-resumes"
     MINIO_ENDPOINT_URL: Optional[str] = "http://localhost:9000"
+    MINIO_PUBLIC_URL: Optional[str] = "http://localhost:9000"
 
     # Email
     EMAIL_PROVIDER: str = "smtp"  # smtp | sendgrid
