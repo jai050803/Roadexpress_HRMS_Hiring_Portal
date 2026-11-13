@@ -68,49 +68,49 @@ function TrackContent() {
   };
 
   return (
-    <main className="max-w-2xl mx-auto px-4 py-8 sm:py-12">
+    <main className="max-w-2xl mx-auto px-4 py-8 sm:py-12 space-y-6">
       {/* Back button */}
       <Link
         href="/jobs"
-        className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500 hover:text-slate-800 transition mb-6"
+        className="inline-flex items-center gap-1.5 text-xs font-medium text-slate-500 hover:text-slate-900 transition"
       >
         <ArrowLeft className="w-3.5 h-3.5" /> Back to open roles
       </Link>
 
       {/* Query Card */}
-      <div className="bg-white rounded-xl border border-slate-200 p-6 sm:p-8 shadow-sm mb-8">
-        <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight mb-2">
-          Track Your Application
+      <div className="bg-white rounded-md border border-slate-200/90 p-6 sm:p-8 shadow-2xs">
+        <h1 className="text-xl font-semibold text-slate-950 tracking-tight mb-1.5">
+          Track application status
         </h1>
-        <p className="text-xs sm:text-sm text-slate-600 mb-6 leading-relaxed">
-          Enter the email address used during submission and your unique application reference number (e.g. <span className="font-mono text-slate-800 font-semibold">APP-20261105-0042</span>).
+        <p className="text-xs text-slate-500 mb-6 leading-relaxed">
+          Enter your candidate email address and the application reference number provided during submission (e.g. <span className="font-tabular font-medium text-slate-800">APP-20261105-0042</span>).
         </p>
 
         {error && (
-          <div className="mb-6 p-4 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3 text-red-800 text-sm">
-            <AlertCircle className="w-5 h-5 shrink-0 text-red-600 mt-0.5" />
-            <p className="font-medium">{error}</p>
+          <div className="mb-6 p-3 rounded-md bg-stone-50 border border-stone-200 flex items-start gap-2.5 text-stone-800 text-xs font-medium">
+            <AlertCircle className="w-4 h-4 shrink-0 text-brand-500 mt-0.5" />
+            <p>{error}</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Candidate Email Address <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">
+              Email address <span className="text-brand-500">*</span>
             </label>
             <input
               type="email"
               required
-              placeholder="e.g. priya.sharma@example.com"
+              placeholder="candidate@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 text-xs rounded-md border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-              Reference Number <span className="text-red-500">*</span>
+            <label className="block text-xs font-medium text-slate-700 mb-1.5">
+              Reference number <span className="text-brand-500">*</span>
             </label>
             <input
               type="text"
@@ -118,24 +118,24 @@ function TrackContent() {
               placeholder="APP-YYYYMMDD-NNNN"
               value={referenceNumber}
               onChange={(e) => setReferenceNumber(e.target.value.toUpperCase())}
-              className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono uppercase"
+              className="w-full px-3 py-2 text-xs rounded-md border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 font-tabular uppercase"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition shadow-sm flex items-center justify-center gap-2 disabled:bg-blue-400"
+            className="w-full py-2.5 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs transition shadow-2xs flex items-center justify-center gap-2 disabled:opacity-50"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Checking Status...</span>
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                <span>Checking status...</span>
               </>
             ) : (
               <>
-                <Search className="w-4 h-4" />
-                <span>Check Application Status</span>
+                <Search className="w-3.5 h-3.5" />
+                <span>Check application status</span>
               </>
             )}
           </button>
@@ -145,25 +145,25 @@ function TrackContent() {
       {/* Result Display */}
       {result && (
         <div className="space-y-6">
-          <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm">
-            <span className="text-xs uppercase font-bold tracking-wider text-slate-400 block mb-1">
-              Application Details
+          <div className="bg-white rounded-md border border-slate-200/90 p-6 shadow-2xs">
+            <span className="text-xs text-slate-500 block mb-1">
+              Application details
             </span>
-            <h2 className="text-xl font-bold text-slate-900 mb-4">
+            <h2 className="text-base font-semibold text-slate-950 mb-3">
               {result.job_title}
             </h2>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-4 border-t border-slate-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs pt-3 border-t border-slate-100">
               <div className="flex items-center gap-2 text-slate-600">
-                <FileText className="w-4 h-4 text-slate-400 shrink-0" />
+                <FileText className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                 <span>Reference: </span>
-                <strong className="font-mono text-slate-900">{result.reference_number}</strong>
+                <strong className="font-tabular font-medium text-slate-900">{result.reference_number}</strong>
               </div>
 
               <div className="flex items-center gap-2 text-slate-600">
-                <Calendar className="w-4 h-4 text-slate-400 shrink-0" />
-                <span>Submitted On: </span>
-                <strong className="text-slate-900">{formatDate(result.applied_at)}</strong>
+                <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                <span>Submitted: </span>
+                <strong className="text-slate-900 font-tabular font-medium">{formatDate(result.applied_at)}</strong>
               </div>
             </div>
           </div>
@@ -184,8 +184,8 @@ export default function TrackApplicationPage() {
     <Suspense
       fallback={
         <main className="max-w-2xl mx-auto px-4 py-16 text-center">
-          <Loader2 className="w-8 h-8 text-blue-600 animate-spin mx-auto mb-3" />
-          <p className="text-sm text-slate-500">Loading tracking page...</p>
+          <Loader2 className="w-6 h-6 text-slate-400 animate-spin mx-auto mb-2" />
+          <p className="text-xs text-slate-500">Loading tracking page...</p>
         </main>
       }
     >

@@ -9,7 +9,7 @@ from app.services.jobs.service import JobsService
 
 @pytest.mark.asyncio
 async def test_create_job_draft(client: AsyncClient, hr_auth_headers: dict):
-    """Creating a job defaults to status = draft."""
+    """Creating a job defaults to status = draft, and generates formatted JD and LinkedIn copy immediately."""
     payload = {
         "title": "Senior Accounts Lead",
         "department": "Accounts & Finance",
@@ -23,8 +23,53 @@ async def test_create_job_draft(client: AsyncClient, hr_auth_headers: dict):
     assert data["title"] == "Senior Accounts Lead"
     assert data["status"] == "draft"
     assert data["applications_count"] == 0
-    assert data["jd_text"] is None
-    assert data["linkedin_post_copy"] is None
+    assert data["jd_text"] is not None
+    assert "Senior Accounts Lead" in data["jd_text"]
+    assert "Accounts & Finance" in data["jd_text"]
+    assert data["linkedin_post_copy"] is not None
+    assert "Senior Accounts Lead" in data["linkedin_post_copy"]
+    assert "Apply here:" in data["linkedin_post_copy"]
+
+
+@pytest.mark.asyncio
+async def test_preview_job_content(client: AsyncClient, hr_auth_headers: dict):
+    """HR can preview generated JD and LinkedIn copy deterministically before creating a role."""
+    payload = {
+        "title": "Principal Linehaul Automation Engineer",
+        "department": "Engineering",
+        "employment_type": "full_time",
+        "location": "Bangalore, Karnataka",
+        "work_mode": "hybrid",
+        "min_experience_years": 5,
+        "required_skills": ["Python", "FastAPI", "PostgreSQL", "Kafka"],
+        "responsibilities_text": "Architect high-throughput dispatch algorithms.\nLead linehaul telemetry integration.",
+        "salary_band": "₹35,00,000 - ₹45,00,000 PA",
+    }
+    response = await client.post("/v1/jobs/preview-content", json=payload, headers=hr_auth_headers)
+    assert response.status_code == 200
+    data = response.json()
+
+    # Verify JD content
+    jd = data["jd_text"]
+    assert "Principal Linehaul Automation Engineer" in jd
+    assert "Engineering" in jd
+    assert "Bangalore, Karnataka" in jd
+    assert "Hybrid" in jd
+    assert "5 year(s)" in jd
+    assert "FastAPI" in jd
+    assert "Architect high-throughput dispatch algorithms." in jd
+    assert "₹35,00,000 - ₹45,00,000 PA" in jd
+
+    # Verify LinkedIn copy content
+    li = data["linkedin_post_copy"]
+    assert "Principal Linehaul Automation Engineer" in li
+    assert "Engineering" in li
+    assert "Architect high-throughput dispatch algorithms." in li
+    assert "FastAPI" in li
+    assert "Apply here:" in li
+    assert "#" not in li
+    assert not re.search("[\U00010000-\U0010ffff]", li)
+
 
 
 @pytest.mark.asyncio

@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { Check, Copy, ExternalLink, Loader2, Share2 } from "lucide-react";
+import { Check, Copy, Share2 } from "lucide-react";
 import { markLinkedinPosted } from "@/lib/api";
 
 interface LinkedInCopyPanelProps {
@@ -63,34 +63,33 @@ export default function LinkedInCopyPanel({
   };
 
   return (
-    <div className="bg-white rounded-lg border border-slate-200 p-4 shadow-sm">
+    <div className="bg-white rounded-md border border-slate-200/90 p-4 shadow-2xs">
       <div className="flex items-center justify-between pb-3 border-b border-slate-100">
         <div className="flex items-center gap-2">
-          <Share2 className="w-4 h-4 text-sky-600" />
-          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-800">
-            LinkedIn Post Generator
+          <Share2 className="w-4 h-4 text-slate-500" />
+          <h3 className="text-xs font-semibold text-slate-900 tracking-tight">
+            LinkedIn post copy
           </h3>
         </div>
 
         <div className="flex items-center gap-3">
-          {/* Mark as posted toggle */}
           <label className="inline-flex items-center gap-2 cursor-pointer select-none">
             <input
               type="checkbox"
               checked={isPosted}
               onChange={handleTogglePosted}
               disabled={isUpdating}
-              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 transition"
+              className="w-4 h-4 rounded text-brand-500 focus:ring-brand-500 border-slate-300 transition"
             />
             <span className="text-xs font-medium text-slate-700">
-              {isUpdating ? "Updating..." : "Mark as Posted"}
+              {isUpdating ? "Updating..." : "Mark as posted"}
             </span>
           </label>
         </div>
       </div>
 
       {error && (
-        <div className="mt-3 p-2 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded">
+        <div className="mt-3 p-2 text-xs bg-stone-50 border border-stone-200 text-stone-700 rounded-md">
           {error}
         </div>
       )}
@@ -99,29 +98,29 @@ export default function LinkedInCopyPanel({
       <div className="mt-3">
         {copyText ? (
           <div className="relative group">
-            <pre className="p-3 bg-slate-50 border border-slate-200 rounded text-xs text-slate-800 font-sans whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
+            <pre className="p-3 bg-slate-50/70 border border-slate-200/80 rounded-md text-xs text-slate-800 font-sans whitespace-pre-wrap leading-relaxed max-h-48 overflow-y-auto">
               {copyText}
             </pre>
-            <div className="mt-2 flex items-center justify-between">
+            <div className="mt-2.5 flex items-center justify-between">
               <span className="text-[11px] text-slate-400">
                 {isPosted && postedAt
                   ? `Posted on LinkedIn: ${formatDate(postedAt)}`
-                  : "Copy this text directly into your company LinkedIn update"}
+                  : "Copy text directly into company LinkedIn update"}
               </span>
               <button
                 type="button"
                 onClick={handleCopy}
-                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded bg-slate-900 text-white hover:bg-slate-800 transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1 text-xs font-medium rounded-md bg-slate-900 text-white hover:bg-slate-800 transition"
               >
                 {copied ? (
                   <>
-                    <Check className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>✓ Copied</span>
+                    <Check className="w-3.5 h-3.5 text-signal-published" />
+                    <span>Copied</span>
                   </>
                 ) : (
                   <>
                     <Copy className="w-3.5 h-3.5" />
-                    <span>Copy Text</span>
+                    <span>Copy text</span>
                   </>
                 )}
               </button>
@@ -129,7 +128,7 @@ export default function LinkedInCopyPanel({
           </div>
         ) : (
           <p className="text-xs text-slate-400 italic py-2">
-            LinkedIn copy will be automatically generated once this role is published.
+            LinkedIn copy will be generated when this role is published.
           </p>
         )}
       </div>

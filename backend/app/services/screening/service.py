@@ -141,6 +141,8 @@ class ScreeningService:
             await ApplicationService.screen(
                 db=db,
                 application_id=application_id,
+                changed_by=None,
+                changed_by_type="system",
                 remarks="Automated AI screening completed",
             )
         else:
@@ -213,6 +215,8 @@ class ScreeningService:
             await ApplicationService.screen(
                 db=db,
                 application_id=application_id,
+                changed_by=None,
+                changed_by_type="system",
                 remarks=f"Screening fallback recorded: {error_message}",
             )
         else:

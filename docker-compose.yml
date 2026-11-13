@@ -78,7 +78,6 @@ services:
     command: >
       sh -c "alembic upgrade head &&
              python scripts/create_admin.py --name 'HR Admin' --email 'admin@roadexpress.com' --password 'AdminPass123!' &&
-             python scripts/seed_initial_jobs.py &&
              uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
 
   celery-worker:

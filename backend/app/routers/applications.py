@@ -169,7 +169,7 @@ async def list_applications(
     source: Optional[str] = Query(None, description="Filter by source (portal, linkedin, email_upload)"),
     search: Optional[str] = Query(None, description="Search by candidate name or email"),
     page: int = Query(1, ge=1, description="Page number"),
-    limit: int = Query(25, ge=1, le=100, description="Items per page"),
+    limit: int = Query(25, ge=1, le=500, description="Items per page"),
     current_user: HRUser = Depends(require_hr_user),
     db: AsyncSession = Depends(get_db),
 ):
@@ -228,6 +228,7 @@ async def screen_application(
         hr_user_id=current_user.id,
         remarks=remarks,
         status_version=status_version,
+        changed_by_type="hr",
     )
 
 

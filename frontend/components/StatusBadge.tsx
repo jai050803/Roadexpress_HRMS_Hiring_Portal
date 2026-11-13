@@ -6,79 +6,103 @@ interface StatusBadgeProps {
   className?: string;
 }
 
-export default function StatusBadge({ status, type = "application", className = "" }: StatusBadgeProps) {
-  const norm = (status || "").toLowerCase();
+export default function StatusBadge({
+  status,
+  type = "application",
+  className = "",
+}: StatusBadgeProps) {
+  const norm = (status || "").toLowerCase().trim();
 
-  let colorClasses = "bg-slate-100 text-slate-700 border-slate-300";
+  // RoadExpress Deliberate Status Palette (Restrained, low-saturation, no loud traffic-light pills)
+  let styleClasses = "bg-slate-100 text-slate-700 border-slate-200";
+  let dotColor = "bg-slate-400";
+  let label = status;
 
   if (type === "job") {
     switch (norm) {
       case "published":
-        colorClasses = "bg-emerald-50 text-emerald-700 border-emerald-300";
+        styleClasses = "bg-teal-50/80 text-teal-800 border-teal-200/70";
+        dotColor = "bg-teal-600";
+        label = "Published";
         break;
       case "draft":
-        colorClasses = "bg-slate-100 text-slate-700 border-slate-300";
+        styleClasses = "bg-slate-100 text-slate-600 border-slate-200";
+        dotColor = "bg-slate-400";
+        label = "Draft";
         break;
       case "closed":
-        colorClasses = "bg-rose-50 text-rose-700 border-rose-300";
+        styleClasses = "bg-stone-100 text-stone-600 border-stone-200";
+        dotColor = "bg-stone-400";
+        label = "Closed";
         break;
     }
   } else if (type === "source") {
     switch (norm) {
       case "portal":
-        colorClasses = "bg-blue-50 text-blue-700 border-blue-200";
+        styleClasses = "bg-slate-100 text-slate-700 border-slate-200";
+        dotColor = "bg-slate-500";
+        label = "Careers portal";
         break;
       case "linkedin":
-        colorClasses = "bg-sky-50 text-sky-800 border-sky-300";
+        styleClasses = "bg-sky-50/80 text-sky-800 border-sky-200";
+        dotColor = "bg-sky-600";
+        label = "LinkedIn";
         break;
       case "email_upload":
-        colorClasses = "bg-amber-50 text-amber-800 border-amber-300";
+        styleClasses = "bg-amber-50/80 text-amber-800 border-amber-200";
+        dotColor = "bg-amber-600";
+        label = "Direct intake";
         break;
+      default:
+        label = status.replace(/_/g, " ");
     }
   } else {
-    // application status
+    // Application pipeline statuses
     switch (norm) {
       case "applied":
-        colorClasses = "bg-blue-50 text-blue-700 border-blue-200";
+        styleClasses = "bg-slate-100 text-slate-700 border-slate-200";
+        dotColor = "bg-slate-500";
+        label = "Applied";
         break;
       case "screened":
-        colorClasses = "bg-indigo-50 text-indigo-700 border-indigo-200";
+        styleClasses = "bg-amber-50/80 text-amber-800 border-amber-200";
+        dotColor = "bg-amber-500";
+        label = "Screened";
         break;
       case "shortlisted":
-        colorClasses = "bg-emerald-50 text-emerald-700 border-emerald-300";
-        break;
-      case "rejected":
-        colorClasses = "bg-rose-50 text-rose-700 border-rose-300";
+        styleClasses = "bg-brand-50 text-brand-700 border-brand-200";
+        dotColor = "bg-brand-500";
+        label = "Shortlisted";
         break;
       case "interview_scheduled":
       case "interview_completed":
-        colorClasses = "bg-purple-50 text-purple-700 border-purple-300";
+        styleClasses = "bg-indigo-50/80 text-indigo-800 border-indigo-200";
+        dotColor = "bg-indigo-500";
+        label = norm === "interview_scheduled" ? "Interview set" : "Interviewed";
         break;
       case "offer_extended":
       case "offer_accepted":
-        colorClasses = "bg-amber-50 text-amber-700 border-amber-300";
+        styleClasses = "bg-teal-50 text-teal-800 border-teal-200";
+        dotColor = "bg-teal-600";
+        label = norm === "offer_extended" ? "Offer extended" : "Offer accepted";
         break;
-      case "offer_declined":
-      case "withdrawn":
-        colorClasses = "bg-zinc-100 text-zinc-600 border-zinc-300";
+      case "rejected":
+        styleClasses = "bg-stone-100 text-stone-600 border-stone-200";
+        dotColor = "bg-stone-400";
+        label = "Concluded";
+        break;
+      default:
+        label = status.replace(/_/g, " ");
         break;
     }
-  }
-
-  // Format label text
-  let label = status;
-  if (norm === "email_upload") label = "Email Upload";
-  else if (norm === "portal") label = "Portal";
-  else if (norm === "linkedin") label = "LinkedIn";
-  else if (type === "application") {
-    label = status.replace(/_/g, " ");
   }
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium border uppercase tracking-wider ${colorClasses} ${className}`}
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-normal border ${styleClasses} ${className}`}
     >
-      {label}
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} aria-hidden="true" />
+      <span>{label}</span>
     </span>
   );
 }

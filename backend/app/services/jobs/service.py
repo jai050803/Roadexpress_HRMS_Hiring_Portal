@@ -8,6 +8,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.job_role import JobRole
 from app.schemas.jobs import JobCreateRequest, JobUpdateRequest
+from app.services.jobs.generator import (
+    generate_jd_text as generate_jd_text_engine,
+    generate_linkedin_copy as generate_linkedin_copy_engine,
+)
 
 
 class JobsService:
@@ -34,81 +38,54 @@ class JobsService:
     @staticmethod
     def generate_jd_text(role: JobRole) -> str:
         """
-        Generate formatted JD text from filled fields.
+        Generate formatted JD text from filled fields using the Executive JD Framework.
         Rule: Omit any section whose data field is null/empty.
         Never print "N/A" or placeholder text.
         """
-        sections: List[str] = []
-
-        # Role Header
-        sections.append(f"# {role.title}\n**Department:** {role.department}")
-
-        # Basic metadata overview
-        meta_items: List[str] = []
-        if role.location and role.location.strip():
-            meta_items.append(f"**Location:** {role.location.strip()}")
-        if role.work_mode and role.work_mode.strip():
-            meta_items.append(f"**Work Mode:** {role.work_mode.strip().capitalize()}")
-        if role.employment_type and role.employment_type.strip():
-            emp_type = role.employment_type.strip().replace("_", " ").title()
-            meta_items.append(f"**Employment Type:** {emp_type}")
-        if role.salary_band and role.salary_band.strip():
-            meta_items.append(f"**Salary Band:** {role.salary_band.strip()}")
-
-        if meta_items:
-            sections.append("\n".join(meta_items))
-
-        # Responsibilities
-        if role.responsibilities_text and role.responsibilities_text.strip():
-            sections.append(f"### Responsibilities\n{role.responsibilities_text.strip()}")
-
-        # Required Skills
-        if role.required_skills:
-            clean_skills = [s.strip() for s in role.required_skills if s and s.strip()]
-            if clean_skills:
-                bullets = "\n".join([f"- {s}" for s in clean_skills])
-                sections.append(f"### Required Skills\n{bullets}")
-
-        # Qualifications & Experience
-        qual_items: List[str] = []
-        if role.min_experience_years is not None and role.min_experience_years > 0:
-            qual_items.append(f"- Minimum {role.min_experience_years} year(s) of relevant experience")
-        if role.education_qualification and role.education_qualification.strip():
-            qual_items.append(f"- Education: {role.education_qualification.strip()}")
-
-        if qual_items:
-            sections.append("### Qualifications & Experience\n" + "\n".join(qual_items))
-
-        return "\n\n".join(sections)
+        return generate_jd_text_engine(
+            title=role.title,
+            department=role.department,
+            employment_type=role.employment_type,
+            location=role.location,
+            work_mode=role.work_mode,
+            education_qualification=role.education_qualification,
+            min_experience_years=role.min_experience_years,
+            required_skills=role.required_skills,
+            responsibilities_text=role.responsibilities_text,
+            salary_band=role.salary_band,
+        )
 
     @staticmethod
     def generate_linkedin_copy(role: JobRole) -> str:
         """
         Generate LinkedIn post copy text for manual HR copying:
-        - Headline
-        - 2-3 sentence plain-text summary (no emojis, no hashtags)
+        - Professional Headline & Scale Context
+        - Role Overview Snapshot
+        - In-Post Responsibilities & Key Requirements
         - "Apply here: {CANDIDATE_PORTAL_URL}/jobs/{id}" link
+        - Zero emojis, zero hashtags.
         """
         portal_url = settings.CANDIDATE_PORTAL_URL.rstrip("/")
-        apply_link = f"{portal_url}/jobs/{role.id}"
-
-        headline = f"Hiring: {role.title} in {role.department} at Road Express."
-
-        location_desc = f" based in {role.location.strip()}" if role.location and role.location.strip() else ""
-        mode_desc = f" ({role.work_mode.strip().lower()})" if role.work_mode and role.work_mode.strip() else ""
-
-        summary = (
-            f"Road Express is looking for a qualified {role.title} to join our {role.department} team{location_desc}{mode_desc}. "
-            f"In this role, you will play an important part in our logistics operations and supply chain commitments. "
-            f"Qualified candidates are invited to review the full job requirements and apply online."
+        role_id = getattr(role, "id", None)
+        return generate_linkedin_copy_engine(
+            title=role.title,
+            department=role.department,
+            portal_url=portal_url,
+            role_id=role_id,
+            employment_type=role.employment_type,
+            location=role.location,
+            work_mode=role.work_mode,
+            education_qualification=role.education_qualification,
+            min_experience_years=role.min_experience_years,
+            required_skills=role.required_skills,
+            responsibilities_text=role.responsibilities_text,
+            salary_band=role.salary_band,
         )
-
-        return f"{headline}\n\n{summary}\n\nApply here: {apply_link}"
 
     async def create_job(
         self, db: AsyncSession, data: JobCreateRequest, hr_user_id: Optional[uuid.UUID] = None
     ) -> JobRole:
-        """Create a new job role in draft status."""
+        """Create a new job role in draft status with pre-generated JD and LinkedIn copy."""
         new_role = JobRole(
             title=data.title.strip(),
             department=data.department.strip(),
@@ -127,6 +104,11 @@ class JobsService:
             linkedin_posted=False,
             created_by=hr_user_id,
         )
+
+        # Generate formatted JD text and LinkedIn post copy upon creation
+        new_role.jd_text = self.generate_jd_text(new_role)
+        new_role.linkedin_post_copy = self.generate_linkedin_copy(new_role)
+
         db.add(new_role)
         await db.commit()
         await db.refresh(new_role)
@@ -202,6 +184,9 @@ class JobsService:
                 value = value.strip()
             setattr(role, field, value)
 
+        # Regenerate formatted JD and LinkedIn copy to reflect latest draft edits
+        role.jd_text = self.generate_jd_text(role)
+        role.linkedin_post_copy = self.generate_linkedin_copy(role)
         role.updated_at = datetime.now(timezone.utc)
         await db.commit()
         await db.refresh(role)

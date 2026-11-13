@@ -84,7 +84,7 @@ export default function StatusTimeline({ history, className = "" }: StatusTimeli
 
             <div className="text-[10px] text-slate-400 mt-1 flex items-center gap-1">
               <Shield className="w-3 h-3" />
-              <span>{item.changed_by ? `Action by HR User (${item.changed_by.slice(0, 8)}...)` : "Automated System Gate"}</span>
+              <span>{item.changed_by_type === "system" || !item.changed_by ? "Automated System Gate" : `Action by HR User (${item.changed_by.slice(0, 8)}...)`}</span>
             </div>
           </div>
         </div>

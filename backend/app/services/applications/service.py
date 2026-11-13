@@ -100,6 +100,7 @@ class ApplicationService:
         reason: Optional[str] = None,
         remarks: Optional[str] = None,
         changed_by: Optional[uuid.UUID] = None,
+        changed_by_type: str = "hr",
     ) -> ApplicationStatusHistory:
         history_entry = ApplicationStatusHistory(
             application_id=application_id,
@@ -108,6 +109,7 @@ class ApplicationService:
             reason=reason,
             remarks=remarks,
             changed_by=changed_by,
+            changed_by_type=changed_by_type,
         )
         db.add(history_entry)
         await db.flush()
@@ -122,6 +124,7 @@ class ApplicationService:
         reason: Optional[str] = None,
         remarks: Optional[str] = None,
         changed_by: Optional[uuid.UUID] = None,
+        changed_by_type: str = "hr",
         expected_version: Optional[int] = None,
     ) -> Application:
         """
@@ -184,6 +187,7 @@ class ApplicationService:
             reason=reason.strip() if reason else None,
             remarks=remarks.strip() if remarks else None,
             changed_by=changed_by,
+            changed_by_type=changed_by_type,
         )
 
         await db.flush()
@@ -306,6 +310,7 @@ class ApplicationService:
             reason=None,
             remarks="Application submitted via candidate portal" if not uploaded_by_hr else "Uploaded by HR",
             changed_by=uploaded_by_hr,
+            changed_by_type="hr" if uploaded_by_hr else "system",
         )
 
         # 9. Commit transaction
@@ -625,6 +630,8 @@ class ApplicationService:
         hr_user_id: Optional[uuid.UUID] = None,
         remarks: Optional[str] = None,
         status_version: Optional[int] = None,
+        changed_by: Optional[uuid.UUID] = None,
+        changed_by_type: Optional[str] = None,
     ) -> ApplicationDetailResponse:
         """
         Transition application to SCREENED.
@@ -646,13 +653,21 @@ class ApplicationService:
                 detail={"error": "not_found", "message": "Application not found."},
             )
 
+        effective_changed_by = changed_by if changed_by is not None else hr_user_id
+        effective_changed_by_type = (
+            changed_by_type
+            if changed_by_type is not None
+            else ("hr" if effective_changed_by is not None else "system")
+        )
+
         await cls._transition_status(
             db=db,
             application=application,
             to_status="SCREENED",
             reason=None,
             remarks=remarks or "Application screened",
-            changed_by=hr_user_id,
+            changed_by=effective_changed_by,
+            changed_by_type=effective_changed_by_type,
             expected_version=status_version,
         )
 
@@ -695,6 +710,7 @@ class ApplicationService:
             reason=None,
             remarks=remarks,
             changed_by=hr_user_id,
+            changed_by_type="hr",
             expected_version=status_version,
         )
 
@@ -750,6 +766,7 @@ class ApplicationService:
             reason=reason,
             remarks=full_remarks,
             changed_by=hr_user_id,
+            changed_by_type="hr",
             expected_version=status_version,
         )
 
@@ -806,6 +823,7 @@ class ApplicationService:
                     to_status="SHORTLISTED",
                     remarks=remarks or "Bulk shortlisted",
                     changed_by=hr_user_id,
+                    changed_by_type="hr",
                 )
                 processed_count += 1
                 shortlisted_ids.append(app_id)
@@ -874,6 +892,7 @@ class ApplicationService:
                     reason=reason.strip(),
                     remarks=remarks or "Bulk rejected",
                     changed_by=hr_user_id,
+                    changed_by_type="hr",
                 )
                 processed_count += 1
                 rejected_ids.append(app_id)

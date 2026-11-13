@@ -299,6 +299,18 @@ async def test_application_service_state_machine_and_bulk(
         )
         assert shortlisted.current_status == "SHORTLISTED"
 
+        # Verify shortlist audit history has changed_by_type='hr'
+        from app.models.status_history import ApplicationStatusHistory
+        sh_short_res = await session.execute(
+            select(ApplicationStatusHistory).where(
+                ApplicationStatusHistory.application_id == app.id,
+                ApplicationStatusHistory.to_status == "SHORTLISTED",
+            )
+        )
+        sh_short = sh_short_res.scalar_one()
+        assert sh_short.changed_by_type == "hr"
+        assert sh_short.changed_by == hr_user.id
+
         # 2. Reject
         rejected = await ApplicationService.reject(
             session,
@@ -309,6 +321,17 @@ async def test_application_service_state_machine_and_bulk(
             custom_message="Thank you for interviewing.",
         )
         assert rejected.current_status == "REJECTED"
+
+        # Verify reject audit history has changed_by_type='hr'
+        sh_rej_res = await session.execute(
+            select(ApplicationStatusHistory).where(
+                ApplicationStatusHistory.application_id == app.id,
+                ApplicationStatusHistory.to_status == "REJECTED",
+            )
+        )
+        sh_rej = sh_rej_res.scalar_one()
+        assert sh_rej.changed_by_type == "hr"
+        assert sh_rej.changed_by == hr_user.id
 
         # 3. Transition from terminal state raises 400
         with pytest.raises(Exception) as term_exc:

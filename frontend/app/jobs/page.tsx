@@ -3,15 +3,10 @@
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
-  Briefcase,
-  CheckCircle2,
-  ExternalLink,
+  CheckCircle,
   Loader2,
-  Lock,
-  PlusCircle,
-  Share2,
+  Plus,
   Users,
-  XCircle,
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import Header from "@/components/Header";
@@ -89,23 +84,23 @@ export default function JobsManagementPage() {
   return (
     <AppShell>
       <Header
-        title="Job Roles Management"
-        breadcrumbs={[{ label: "Overview", href: "/dashboard" }, { label: "Job Roles" }]}
+        title="Job roles"
+        breadcrumbs={[{ label: "Overview", href: "/dashboard" }, { label: "Job roles" }]}
         actions={
           <Link
             href="/jobs/new"
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded bg-blue-600 hover:bg-blue-700 text-white font-semibold text-xs transition shadow-sm"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs transition shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
           >
-            <PlusCircle className="w-3.5 h-3.5" />
-            <span>New Role</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Create role</span>
           </Link>
         }
       />
 
-      <main className="p-6 space-y-4">
+      <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-5">
         {/* Filter Tab Bar */}
-        <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-          <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs font-semibold">
+        <div className="flex items-center justify-between border-b border-slate-200/80 pb-3">
+          <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-md border border-slate-200/60 text-xs font-medium">
             {["all", "published", "draft", "closed"].map((f) => (
               <button
                 key={f}
@@ -113,8 +108,8 @@ export default function JobsManagementPage() {
                 onClick={() => setStatusFilter(f)}
                 className={`px-3 py-1.5 rounded capitalize transition ${
                   statusFilter === f
-                    ? "bg-white text-slate-900 shadow-sm"
-                    : "text-slate-500 hover:text-slate-800"
+                    ? "bg-white text-slate-900 shadow-2xs font-semibold"
+                    : "text-slate-600 hover:text-slate-900"
                 }`}
               >
                 {f}
@@ -122,29 +117,29 @@ export default function JobsManagementPage() {
             ))}
           </div>
 
-          <span className="text-xs text-slate-500 font-mono">
+          <span className="text-xs text-slate-500 font-tabular">
             {jobs.length} total roles
           </span>
         </div>
 
         {error && (
-          <div className="p-3 text-xs bg-rose-50 border border-rose-200 text-rose-700 rounded font-medium">
+          <div className="p-3 text-xs bg-stone-50 border border-stone-200 text-stone-800 rounded-md font-medium">
             {error}
           </div>
         )}
 
         {/* Dense Table */}
-        <div className="bg-white rounded-lg border border-slate-200 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-md border border-slate-200/90 shadow-2xs overflow-hidden">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold uppercase tracking-wider text-[11px]">
-                <th className="py-2.5 px-3.5">Title & Department</th>
-                <th className="py-2.5 px-3">Location / Mode</th>
-                <th className="py-2.5 px-3">Status</th>
-                <th className="py-2.5 px-3">Applicants</th>
-                <th className="py-2.5 px-3">Deadline</th>
-                <th className="py-2.5 px-3">LinkedIn</th>
-                <th className="py-2.5 px-3 text-right">Actions</th>
+              <tr className="bg-slate-50/70 border-b border-slate-200/80 text-slate-600 font-medium text-xs">
+                <th className="py-2.5 px-3.5 font-medium">Title & department</th>
+                <th className="py-2.5 px-3 font-medium">Location / mode</th>
+                <th className="py-2.5 px-3 font-medium">Status</th>
+                <th className="py-2.5 px-3 font-medium">Applicants</th>
+                <th className="py-2.5 px-3 font-medium">Deadline</th>
+                <th className="py-2.5 px-3 font-medium">LinkedIn</th>
+                <th className="py-2.5 px-3 text-right font-medium">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -157,7 +152,7 @@ export default function JobsManagementPage() {
                 </tr>
               ) : jobs.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-slate-400 italic">
+                  <td colSpan={7} className="py-8 text-center text-slate-400">
                     No job roles found in this status.
                   </td>
                 </tr>
@@ -166,25 +161,27 @@ export default function JobsManagementPage() {
                   const isProcessing = actionLoading === job.id;
 
                   return (
-                    <tr key={job.id} className="hover:bg-slate-50 transition">
+                    <tr key={job.id} className="hover:bg-slate-50/70 transition">
                       {/* Title & Department */}
                       <td className="py-2.5 px-3.5">
                         <Link
                           href={`/jobs/${job.id}`}
-                          className="font-bold text-slate-900 hover:text-blue-600 block leading-snug"
+                          className="font-medium text-slate-900 hover:text-brand-600 block leading-snug transition"
                         >
                           {job.title}
                         </Link>
-                        <span className="text-[11px] text-slate-400 block mt-0.5">
-                          {job.department} • {job.employment_type?.replace(/_/g, " ") || "Full Time"}
-                        </span>
+                        <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
+                          <span>{job.department}</span>
+                          <span className="text-slate-300">/</span>
+                          <span>{job.employment_type?.replace(/_/g, " ") || "Full Time"}</span>
+                        </div>
                       </td>
 
                       {/* Location / Mode */}
                       <td className="py-2.5 px-3 text-slate-600 capitalize">
-                        {job.location || "Remote"}
+                        {job.location || "Corporate HQ"}
                         {job.work_mode && (
-                          <span className="block text-[10px] text-slate-400 font-medium">
+                          <span className="block text-[11px] text-slate-400">
                             ({job.work_mode})
                           </span>
                         )}
@@ -199,7 +196,7 @@ export default function JobsManagementPage() {
                       <td className="py-2.5 px-3">
                         <Link
                           href={`/pipeline/${job.id}`}
-                          className="font-mono font-bold text-slate-800 hover:text-blue-600 flex items-center gap-1.5"
+                          className="font-tabular font-medium text-slate-800 hover:text-brand-600 flex items-center gap-1.5 transition"
                         >
                           <Users className="w-3.5 h-3.5 text-slate-400" />
                           <span>{job.applications_count}</span>
@@ -207,18 +204,18 @@ export default function JobsManagementPage() {
                       </td>
 
                       {/* Deadline */}
-                      <td className="py-2.5 px-3 text-slate-600 font-mono text-[11px]">
+                      <td className="py-2.5 px-3 text-slate-600 font-tabular text-xs">
                         {formatDate(job.application_deadline)}
                       </td>
 
                       {/* LinkedIn Posted */}
                       <td className="py-2.5 px-3">
                         {job.linkedin_posted ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-emerald-700 font-semibold">
-                            <CheckCircle2 className="w-3.5 h-3.5" /> Posted
+                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-700 font-medium">
+                            <CheckCircle className="w-3 h-3 text-signal-published" /> Posted
                           </span>
                         ) : (
-                          <span className="text-[11px] text-slate-400">Not yet</span>
+                          <span className="text-[11px] text-slate-400">Not shared</span>
                         )}
                       </td>
 
@@ -227,16 +224,16 @@ export default function JobsManagementPage() {
                         <div className="inline-flex items-center gap-1.5 justify-end">
                           <Link
                             href={`/pipeline/${job.id}`}
-                            className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition"
-                            title="Candidate Pipeline"
+                            className="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-[11px] transition"
+                            title="Candidate pipeline"
                           >
                             Pipeline
                           </Link>
 
                           <Link
                             href={`/jobs/${job.id}`}
-                            className="px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-[11px] transition"
-                            title="Role Details & JD"
+                            className="px-2.5 py-1 rounded-md bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 font-medium text-[11px] transition"
+                            title="Role details"
                           >
                             Details
                           </Link>
@@ -246,7 +243,7 @@ export default function JobsManagementPage() {
                               type="button"
                               onClick={() => handlePublish(job.id)}
                               disabled={isProcessing}
-                              className="px-2 py-1 rounded bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] transition disabled:bg-slate-300"
+                              className="px-2.5 py-1 rounded-md bg-slate-900 hover:bg-slate-800 text-white font-medium text-[11px] transition disabled:opacity-50"
                             >
                               Publish
                             </button>
@@ -257,7 +254,7 @@ export default function JobsManagementPage() {
                               type="button"
                               onClick={() => handleClose(job.id)}
                               disabled={isProcessing}
-                              className="px-2 py-1 rounded bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-[11px] transition disabled:bg-slate-100"
+                              className="px-2.5 py-1 rounded-md bg-white hover:bg-stone-50 text-stone-700 border border-stone-200 font-medium text-[11px] transition disabled:opacity-50"
                             >
                               Close
                             </button>

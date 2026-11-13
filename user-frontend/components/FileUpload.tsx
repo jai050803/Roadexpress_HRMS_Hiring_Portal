@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState, DragEvent, ChangeEvent } from "react";
-import { AlertCircle, FileCheck, FileText, Upload, X } from "lucide-react";
+import { AlertCircle, FileCheck, Upload, X } from "lucide-react";
 
 interface FileUploadProps {
   onFileSelect: (file: File | null) => void;
@@ -106,34 +106,34 @@ export default function FileUpload({
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
           onClick={() => fileInputRef.current?.click()}
-          className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition ${
+          className={`border border-dashed rounded-md p-6 text-center cursor-pointer transition ${
             isDragging
-              ? "border-blue-500 bg-blue-50/50"
+              ? "border-brand-500 bg-brand-50/30"
               : activeError
-              ? "border-red-300 bg-red-50/20 hover:border-red-400"
-              : "border-slate-300 hover:border-blue-400 bg-slate-50/50 hover:bg-slate-50"
+              ? "border-stone-300 bg-stone-50/50"
+              : "border-slate-300 hover:border-slate-400 bg-slate-50/50 hover:bg-slate-50"
           }`}
         >
-          <div className="w-12 h-12 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center mx-auto mb-3">
-            <Upload className="w-6 h-6" />
+          <div className="w-10 h-10 rounded-md bg-slate-100 text-slate-500 flex items-center justify-center mx-auto mb-2.5">
+            <Upload className="w-5 h-5" />
           </div>
-          <p className="text-sm font-semibold text-slate-800 mb-1">
-            Click to upload or drag & drop your resume
+          <p className="text-xs font-medium text-slate-800 mb-0.5">
+            Click to upload or drag and drop your resume
           </p>
-          <p className="text-xs text-slate-500">PDF only (max {maxSizeMb}MB)</p>
+          <p className="text-[11px] text-slate-500">PDF document only (max {maxSizeMb}MB)</p>
         </div>
       ) : (
-        <div className="p-4 rounded-xl border border-slate-200 bg-white shadow-sm flex items-center justify-between gap-3">
+        <div className="p-3.5 rounded-md border border-slate-200 bg-white shadow-2xs flex items-center justify-between gap-3">
           <div className="flex items-center gap-3 overflow-hidden">
-            <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <FileCheck className="w-5 h-5" />
+            <div className="w-8 h-8 rounded bg-slate-100 text-slate-700 flex items-center justify-center shrink-0 text-xs font-semibold">
+              PDF
             </div>
             <div className="overflow-hidden">
-              <p className="text-sm font-semibold text-slate-900 truncate">
+              <p className="text-xs font-medium text-slate-900 truncate">
                 {selectedFile.name}
               </p>
-              <p className="text-xs text-slate-500">
-                {(selectedFile.size / 1024).toFixed(0)} KB • PDF Document
+              <p className="text-[11px] text-slate-500 font-tabular">
+                {(selectedFile.size / 1024).toFixed(0)} KB
               </p>
             </div>
           </div>
@@ -141,17 +141,17 @@ export default function FileUpload({
           <button
             type="button"
             onClick={handleRemove}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition shrink-0"
+            className="p-1 rounded text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition shrink-0"
             title="Remove file"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
       )}
 
       {activeError && (
-        <div className="mt-2 flex items-center gap-1.5 text-xs text-red-600 font-medium">
-          <AlertCircle className="w-4 h-4 shrink-0" />
+        <div className="mt-2 flex items-center gap-1.5 text-xs text-stone-700 font-medium">
+          <AlertCircle className="w-3.5 h-3.5 shrink-0 text-brand-500" />
           <span>{activeError}</span>
         </div>
       )}

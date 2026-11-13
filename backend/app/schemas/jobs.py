@@ -94,3 +94,23 @@ class HRJobResponse(BaseModel):
     applications_still_open: bool
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class JobContentPreviewRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    department: str = Field(..., min_length=1, max_length=255)
+    employment_type: Optional[str] = Field(None, max_length=50)
+    location: Optional[str] = Field(None, max_length=255)
+    work_mode: Optional[str] = Field(None, max_length=50)
+    education_qualification: Optional[str] = None
+    min_experience_years: Optional[int] = Field(None, ge=0)
+    required_skills: Optional[List[str]] = None
+    responsibilities_text: Optional[str] = None
+    salary_band: Optional[str] = Field(None, max_length=100)
+    job_id: Optional[uuid.UUID] = None
+
+
+class JobContentPreviewResponse(BaseModel):
+    jd_text: str
+    linkedin_post_copy: str
+

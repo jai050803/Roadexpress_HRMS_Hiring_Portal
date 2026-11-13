@@ -167,6 +167,19 @@ async def test_screening_success_and_status_transition(test_role):
         app_record = app_res.scalar_one()
         assert app_record.current_status == "SCREENED"
 
+        # Verify status history audit entry was written with system attributes
+        from app.models.status_history import ApplicationStatusHistory
+        sh_res = await session.execute(
+            select(ApplicationStatusHistory).where(
+                ApplicationStatusHistory.application_id == app_id,
+                ApplicationStatusHistory.to_status == "SCREENED",
+            )
+        )
+        sh = sh_res.scalar_one()
+        assert sh.changed_by_type == "system"
+        assert sh.changed_by is None
+        assert sh.remarks == "Automated AI screening completed"
+
 
 @pytest.mark.asyncio
 async def test_screening_idempotency(test_role):

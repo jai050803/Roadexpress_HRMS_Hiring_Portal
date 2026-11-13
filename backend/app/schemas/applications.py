@@ -72,6 +72,7 @@ class StatusHistoryItem(BaseModel):
     to_status: str
     reason: Optional[str] = None
     remarks: Optional[str] = None
+    changed_by_type: str = "hr"
     changed_by: Optional[uuid.UUID] = None
     changed_at: datetime
 

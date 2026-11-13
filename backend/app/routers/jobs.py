@@ -3,17 +3,24 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
-from app.middleware.auth import require_hr_user
+from app.middleware.auth import get_optional_hr_user, require_hr_user
 from app.models.hr_user import HRUser
 from app.schemas.jobs import (
     HRJobResponse,
+    JobContentPreviewRequest,
+    JobContentPreviewResponse,
     JobCreateRequest,
     JobUpdateRequest,
     PublicJobDetail,
     PublicJobSummary,
 )
 from app.services.jobs import jobs_service
+from app.services.jobs.generator import (
+    generate_jd_text as generate_jd_text_engine,
+    generate_linkedin_copy as generate_linkedin_copy_engine,
+)
 
 router = APIRouter(prefix="/jobs", tags=["Jobs"])
 
@@ -146,25 +153,85 @@ async def create_job(
     )
 
 
+@router.post(
+    "/preview-content",
+    response_model=JobContentPreviewResponse,
+    status_code=status.HTTP_200_OK,
+    summary="Generate real-time JD and LinkedIn post preview (HR only)",
+)
+async def preview_job_content(
+    data: JobContentPreviewRequest,
+    current_user: HRUser = Depends(require_hr_user),
+):
+    """
+    HR endpoint: Deterministically generate formatted Job Description and LinkedIn
+    post copy using defined frameworks without creating or modifying a job role.
+    Pure backend business logic — no frontend logic required.
+    """
+    portal_url = settings.CANDIDATE_PORTAL_URL.rstrip("/")
+    jd_text = generate_jd_text_engine(
+        title=data.title,
+        department=data.department,
+        employment_type=data.employment_type,
+        location=data.location,
+        work_mode=data.work_mode,
+        education_qualification=data.education_qualification,
+        min_experience_years=data.min_experience_years,
+        required_skills=data.required_skills,
+        responsibilities_text=data.responsibilities_text,
+        salary_band=data.salary_band,
+    )
+    linkedin_copy = generate_linkedin_copy_engine(
+        title=data.title,
+        department=data.department,
+        portal_url=portal_url,
+        role_id=data.job_id,
+        employment_type=data.employment_type,
+        location=data.location,
+        work_mode=data.work_mode,
+        education_qualification=data.education_qualification,
+        min_experience_years=data.min_experience_years,
+        required_skills=data.required_skills,
+        responsibilities_text=data.responsibilities_text,
+        salary_band=data.salary_band,
+    )
+    return JobContentPreviewResponse(
+        jd_text=jd_text,
+        linkedin_post_copy=linkedin_copy,
+    )
+
+
 # ─── Single Job Public Endpoint ──────────────────────────────────────────────
 
 @router.get(
     "/{id}",
     response_model=PublicJobDetail,
     status_code=status.HTTP_200_OK,
-    summary="Get single published job role (Public)",
+    summary="Get single published job role (Public / HR)",
 )
 async def get_published_job(
     id: uuid.UUID,
     db: AsyncSession = Depends(get_db),
+    hr_user: Optional[HRUser] = Depends(get_optional_hr_user),
 ):
     """
-    Public endpoint: Get a single published job role.
-    If the role is draft or closed, returns 404.
+    Get a single job role.
+    If public candidate (unauthenticated), returns only if published (otherwise 404).
+    If authenticated HR user, returns the role in any status (draft, published, closed).
     Never exposes internal applications_count.
     """
     role = await jobs_service.get_job(db=db, role_id=id)
-    if not role or role.status != "published":
+    if not role:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "error": "job_not_found",
+                "message": "Job role not found",
+                "details": {},
+            },
+        )
+
+    if role.status != "published" and not hr_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={

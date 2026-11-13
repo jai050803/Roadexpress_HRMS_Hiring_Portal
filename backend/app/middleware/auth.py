@@ -40,3 +40,20 @@ async def require_hr_user(
 ) -> HRUser:
     """FastAPI dependency to protect HR routes. Validates JWT and returns current HR user."""
     return await auth_service.get_current_user(token=token, db=db)
+
+
+async def get_optional_hr_user(
+    authorization: str | None = Header(None),
+    db: AsyncSession = Depends(get_db),
+) -> HRUser | None:
+    """Optional HR user dependency: returns HRUser if valid Bearer token provided, else None."""
+    if not authorization:
+        return None
+    try:
+        parts = authorization.split()
+        if len(parts) == 2 and parts[0].lower() == "bearer":
+            return await auth_service.get_current_user(token=parts[1], db=db)
+    except Exception:
+        return None
+    return None
+

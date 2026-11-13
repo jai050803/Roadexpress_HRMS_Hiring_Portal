@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Optional
-from sqlalchemy import DateTime, ForeignKey, Index, String, Text, func
+from sqlalchemy import CheckConstraint, DateTime, ForeignKey, Index, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -31,6 +31,12 @@ class ApplicationStatusHistory(Base):
     reason: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # required when to_status = REJECTED
     remarks: Mapped[Optional[str]] = mapped_column(Text, nullable=True)  # optional HR notes (internal only)
 
+    changed_by_type: Mapped[str] = mapped_column(
+        String(20),
+        server_default="hr",
+        default="hr",
+        nullable=False,
+    )  # 'hr' or 'system'
     changed_by: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True),
         ForeignKey("hr_users.id"),
@@ -47,6 +53,7 @@ class ApplicationStatusHistory(Base):
     changed_by_user: Mapped[Optional["HRUser"]] = relationship("HRUser", back_populates="status_history_entries")
 
     __table_args__ = (
+        CheckConstraint("changed_by_type IN ('hr', 'system')", name="chk_status_history_changed_by_type"),
         Index("idx_status_history_application", "application_id"),
         Index("idx_status_history_changed_at", changed_at.desc()),
     )

@@ -62,10 +62,10 @@ export default function DeadlineCountdown({
   if (timeLeft.isExpired) {
     return (
       <div
-        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded bg-amber-50 text-amber-800 border border-amber-200 text-xs font-semibold ${className}`}
+        className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-stone-50 text-stone-700 border border-stone-200 text-xs font-medium ${className}`}
       >
-        <Clock className="w-3.5 h-3.5" />
-        <span>Applications Deadline Passed</span>
+        <Clock className="w-3.5 h-3.5 text-stone-500" />
+        <span>Application deadline passed</span>
       </div>
     );
   }
@@ -73,12 +73,12 @@ export default function DeadlineCountdown({
   if (compact) {
     return (
       <div
-        className={`inline-flex items-center gap-1.5 text-xs text-slate-600 font-medium ${className}`}
+        className={`inline-flex items-center gap-1.5 text-xs text-slate-500 font-medium ${className}`}
       >
         <Clock className="w-3.5 h-3.5 text-slate-400" />
         <span>
           Closes in:{" "}
-          <strong className="text-slate-900 font-semibold">
+          <strong className="text-slate-900 font-tabular font-medium">
             {timeLeft.days > 0 ? `${timeLeft.days}d ` : ""}
             {timeLeft.hours}h {timeLeft.minutes}m {timeLeft.seconds}s
           </strong>
@@ -89,28 +89,28 @@ export default function DeadlineCountdown({
 
   return (
     <div
-      className={`p-3 rounded-lg bg-slate-900 text-slate-100 border border-slate-800 ${className}`}
+      className={`p-3.5 rounded-md bg-slate-50 border border-slate-200/90 ${className}`}
     >
-      <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-400 mb-2">
-        <Clock className="w-3.5 h-3.5 text-amber-400" />
-        <span>Application Deadline Countdown</span>
+      <div className="flex items-center gap-1.5 text-xs font-medium text-slate-600 mb-2">
+        <Clock className="w-3.5 h-3.5 text-slate-400" />
+        <span>Application deadline countdown</span>
       </div>
       <div className="grid grid-cols-4 gap-2 text-center">
-        <div className="bg-slate-800 p-2 rounded">
-          <div className="text-lg font-bold text-white">{timeLeft.days}</div>
-          <div className="text-[10px] text-slate-400 uppercase">Days</div>
+        <div className="bg-white border border-slate-200/80 p-2 rounded-md">
+          <div className="text-base font-semibold text-slate-950 font-tabular">{timeLeft.days}</div>
+          <div className="text-[11px] text-slate-500">Days</div>
         </div>
-        <div className="bg-slate-800 p-2 rounded">
-          <div className="text-lg font-bold text-white">{timeLeft.hours}</div>
-          <div className="text-[10px] text-slate-400 uppercase">Hours</div>
+        <div className="bg-white border border-slate-200/80 p-2 rounded-md">
+          <div className="text-base font-semibold text-slate-950 font-tabular">{timeLeft.hours}</div>
+          <div className="text-[11px] text-slate-500">Hours</div>
         </div>
-        <div className="bg-slate-800 p-2 rounded">
-          <div className="text-lg font-bold text-white">{timeLeft.minutes}</div>
-          <div className="text-[10px] text-slate-400 uppercase">Mins</div>
+        <div className="bg-white border border-slate-200/80 p-2 rounded-md">
+          <div className="text-base font-semibold text-slate-950 font-tabular">{timeLeft.minutes}</div>
+          <div className="text-[11px] text-slate-500">Mins</div>
         </div>
-        <div className="bg-slate-800 p-2 rounded">
-          <div className="text-lg font-bold text-white">{timeLeft.seconds}</div>
-          <div className="text-[10px] text-slate-400 uppercase">Secs</div>
+        <div className="bg-white border border-slate-200/80 p-2 rounded-md">
+          <div className="text-base font-semibold text-slate-950 font-tabular">{timeLeft.seconds}</div>
+          <div className="text-[11px] text-slate-500">Secs</div>
         </div>
       </div>
     </div>
