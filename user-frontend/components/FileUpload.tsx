@@ -26,18 +26,16 @@ export default function FileUpload({
     const isPdf =
       file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
     if (!isPdf) {
-      const msg = "Invalid file type. Please upload a PDF document (.pdf only).";
-      setInternalError(msg);
+      setInternalError("File must be a PDF under 5MB");
       setSelectedFile(null);
       onFileSelect(null);
       return;
     }
 
     // 2. Validate Size
-    const maxSizeBytes = maxSizeMb * 1024 * 1024;
+    const maxSizeBytes = 5 * 1024 * 1024;
     if (file.size > maxSizeBytes) {
-      const msg = `File is too large (${(file.size / (1024 * 1024)).toFixed(1)}MB). Maximum allowed size is ${maxSizeMb}MB.`;
-      setInternalError(msg);
+      setInternalError("File must be a PDF under 5MB");
       setSelectedFile(null);
       onFileSelect(null);
       return;
@@ -120,7 +118,7 @@ export default function FileUpload({
           <p className="text-xs font-medium text-slate-800 mb-0.5">
             Click to upload or drag and drop your resume
           </p>
-          <p className="text-[11px] text-slate-500">PDF document only (max {maxSizeMb}MB)</p>
+          <p className="text-[11px] text-slate-500">PDF document only (max 5MB)</p>
         </div>
       ) : (
         <div className="p-3.5 rounded-md border border-slate-200 bg-white shadow-2xs flex items-center justify-between gap-3">

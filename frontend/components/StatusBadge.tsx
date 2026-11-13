@@ -80,11 +80,31 @@ export default function StatusBadge({
         dotColor = "bg-indigo-500";
         label = norm === "interview_scheduled" ? "Interview set" : "Interviewed";
         break;
+      case "offered":
       case "offer_extended":
+        styleClasses = "bg-blue-50 text-blue-800 border-blue-200";
+        dotColor = "bg-blue-600";
+        label = "Offered";
+        break;
       case "offer_accepted":
         styleClasses = "bg-teal-50 text-teal-800 border-teal-200";
         dotColor = "bg-teal-600";
-        label = norm === "offer_extended" ? "Offer extended" : "Offer accepted";
+        label = "Offer accepted";
+        break;
+      case "offer_declined":
+        styleClasses = "bg-stone-100 text-stone-600 border-stone-200";
+        dotColor = "bg-stone-400";
+        label = "Offer declined";
+        break;
+      case "offer_lapsed":
+        styleClasses = "bg-stone-100 text-stone-600 border-stone-200";
+        dotColor = "bg-stone-400";
+        label = "Offer lapsed";
+        break;
+      case "closed":
+        styleClasses = "bg-stone-100 text-stone-600 border-stone-200";
+        dotColor = "bg-stone-400";
+        label = "Closed";
         break;
       case "rejected":
         styleClasses = "bg-stone-100 text-stone-600 border-stone-200";

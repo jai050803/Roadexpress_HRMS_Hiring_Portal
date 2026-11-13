@@ -132,7 +132,7 @@ export default function JobDetailPage() {
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs transition shadow-2xs focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
             >
               <Users className="w-3.5 h-3.5" />
-              <span>Pipeline ({job.applications_count})</span>
+              <span>Pipeline ({job.applications_count ?? 0})</span>
             </Link>
 
             {job.status === "draft" && (
@@ -178,26 +178,29 @@ export default function JobDetailPage() {
               </h1>
             </div>
 
-            <div className="flex items-center gap-4 text-xs">
-              <div className="bg-slate-50 border border-slate-200/80 rounded-md px-3.5 py-2 text-center">
-                <span className="text-xs text-slate-500 block">
-                  Total applicants
-                </span>
-                <span className="text-base font-semibold text-slate-950 font-tabular">
-                  {job.applications_count}
-                </span>
-              </div>
-
-              {job.max_applications && (
-                <div className="bg-slate-50 border border-slate-200/80 rounded-md px-3.5 py-2 text-center">
-                  <span className="text-xs text-slate-500 block">
-                    Application cap
+            <div className="flex items-center">
+              <div className="flex items-center bg-slate-50/90 border border-slate-200/80 rounded-lg px-4 py-2 divide-x divide-slate-200">
+                <div className="pr-4 text-left">
+                  <span className="text-[11px] font-medium text-slate-500 block leading-tight">
+                    Total applicants
                   </span>
-                  <span className="text-base font-semibold text-slate-950 font-tabular">
-                    {job.max_applications}
+                  <span className="text-base font-semibold text-slate-900 font-tabular leading-snug">
+                    {job.applications_count ?? 0}
                   </span>
                 </div>
-              )}
+
+                {job.max_applications ? (
+                  <div className="pl-4 text-left">
+                    <span className="text-[11px] font-medium text-slate-500 block leading-tight">
+                      Application cap
+                    </span>
+                    <span className="text-base font-semibold text-slate-900 font-tabular leading-snug">
+                      {job.applications_count ?? 0}
+                      <span className="text-slate-400 font-normal text-xs ml-1">/ {job.max_applications}</span>
+                    </span>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
 
@@ -294,7 +297,7 @@ export default function JobDetailPage() {
                 className="w-full py-2 rounded-md bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium flex items-center justify-center gap-2 transition"
               >
                 <Users className="w-3.5 h-3.5" />
-                <span>Go to pipeline ({job.applications_count} candidates)</span>
+                <span>Go to pipeline ({job.applications_count ?? 0} {(job.applications_count ?? 0) === 1 ? "candidate" : "candidates"})</span>
               </Link>
             </div>
           </div>

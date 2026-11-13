@@ -11,6 +11,8 @@ from fastapi import HTTPException, UploadFile, status
 
 from app.config import settings
 
+MAX_RESUME_SIZE_BYTES = 5_242_880  # 5 * 1024 * 1024 bytes (5MB)
+
 # Local storage fallback directory
 LOCAL_STORAGE_DIR = Path("uploads/resumes")
 LOCAL_STORAGE_DIR.mkdir(parents=True, exist_ok=True)
@@ -102,14 +104,10 @@ async def save_resume_file(
     content = await file.read()
     file_size = len(content)
 
-    max_size_bytes = settings.MAX_RESUME_SIZE_MB * 1024 * 1024
-    if file_size > max_size_bytes:
+    if file_size > MAX_RESUME_SIZE_BYTES:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "error": "file_too_large",
-                "message": f"Resume file size exceeds maximum limit of {settings.MAX_RESUME_SIZE_MB}MB.",
-            },
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Resume file exceeds the 5MB maximum size limit.",
         )
 
     if file_size == 0:

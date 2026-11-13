@@ -73,11 +73,14 @@ def event_loop():
 async def init_test_db(event_loop):
     """Create all tables in hrms_test_db once before any tests run."""
     async with test_engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm;"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(text("CREATE SEQUENCE IF NOT EXISTS applications_global_seq START 1;"))
     yield
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
+        await conn.execute(text("DROP SEQUENCE IF EXISTS applications_global_seq;"))
     await test_engine.dispose()
 
 
@@ -97,6 +100,7 @@ async def clean_tables():
             "hr_users",
         ]:
             await conn.execute(text(f"DELETE FROM {tbl};"))
+        await conn.execute(text("ALTER SEQUENCE IF EXISTS applications_global_seq RESTART WITH 1;"))
     yield
 
 

@@ -71,6 +71,7 @@ async def test_notification_sent_once_on_retry(sample_application: Application):
         notifications = res.scalars().all()
         assert len(notifications) == 1
         assert notifications[0].status == "sent"
+        assert notifications[0].provider_status == "delivered"
 
 
 @pytest.mark.asyncio
@@ -94,6 +95,7 @@ async def test_notification_failure_does_not_break_status(sample_application: Ap
         notif = res.scalar_one_or_none()
         assert notif is not None
         assert notif.status == "failed"
+        assert notif.provider_status == "failed"
 
 
 @pytest.mark.asyncio
@@ -147,5 +149,22 @@ def test_email_client_smtp_and_sendgrid():
         )
         assert res is True
         assert mock_server.sendmail.called
+
+
+@pytest.mark.asyncio
+async def test_notification_provider_status_default_pending(sample_application: Application):
+    """Verify that a notification row created in DB defaults to provider_status='pending'."""
+    async with TestSessionLocal() as session:
+        notif = Notification(
+            application_id=sample_application.id,
+            type="custom_test_pending",
+            channel="email",
+        )
+        session.add(notif)
+        await session.commit()
+        await session.refresh(notif)
+        assert notif.status == "pending"
+        assert notif.provider_status == "pending"
+
 
 

@@ -31,9 +31,12 @@ import ScoreIndicator from "@/components/ScoreIndicator";
 import StatusBadge from "@/components/StatusBadge";
 import StatusTimeline from "@/components/StatusTimeline";
 import {
+  acceptOffer,
+  declineOffer,
   getApplication,
   getJob,
   getResumePresignedUrl,
+  lapseOffer,
   rejectApplication,
   screenApplication,
   shortlistApplication,
@@ -52,6 +55,15 @@ export default function CandidateProfilePage() {
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const [offerModal, setOfferModal] = useState<{
+    isOpen: boolean;
+    type: "accept" | "decline" | "lapse" | null;
+    remarks: string;
+  }>({
+    isOpen: false,
+    type: null,
+    remarks: "",
+  });
 
   const loadData = async () => {
     try {
@@ -116,6 +128,26 @@ export default function CandidateProfilePage() {
     }
   };
 
+  const handleConfirmOfferAction = async () => {
+    if (!offerModal.type) return;
+    try {
+      setActionLoading(true);
+      if (offerModal.type === "accept") {
+        await acceptOffer(applicationId, offerModal.remarks || undefined, application?.status_version);
+      } else if (offerModal.type === "decline") {
+        await declineOffer(applicationId, offerModal.remarks || undefined, application?.status_version);
+      } else if (offerModal.type === "lapse") {
+        await lapseOffer(applicationId, offerModal.remarks || undefined, application?.status_version);
+      }
+      setOfferModal({ isOpen: false, type: null, remarks: "" });
+      await loadData();
+    } catch (err: any) {
+      alert(err.message || "Failed to update offer status");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   const formatDate = (isoString?: string) => {
     if (!isoString) return "";
     try {
@@ -155,7 +187,14 @@ export default function CandidateProfilePage() {
     );
   }
 
-  const isTerminal = application.current_status === "REJECTED" || application.current_status === "OFFER_ACCEPTED";
+  const isTerminal = [
+    "REJECTED",
+    "CLOSED",
+    "OFFER_ACCEPTED",
+    "OFFER_DECLINED",
+    "OFFER_LAPSED",
+  ].includes(application.current_status);
+  const isOffered = application.current_status === "OFFERED";
   const parsed = application.resume?.parsed_json || {};
   const screening = application.screening_result;
   const isHardFail = screening?.hard_filter_passed === false;
@@ -187,27 +226,63 @@ export default function CandidateProfilePage() {
               </button>
             )}
 
-            {!isTerminal && (
-              <button
-                type="button"
-                onClick={() => setIsRejectModalOpen(true)}
-                disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 font-medium text-xs transition disabled:opacity-50"
-              >
-                <span>Reject</span>
-              </button>
-            )}
+            {isOffered ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setOfferModal({ isOpen: true, type: "accept", remarks: "" })}
+                  disabled={actionLoading}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-medium text-xs transition shadow-2xs disabled:opacity-50"
+                >
+                  <CheckCircle className="w-3.5 h-3.5" />
+                  <span>Offer Accepted</span>
+                </button>
 
-            {!isTerminal && application.current_status !== "SHORTLISTED" && (
-              <button
-                type="button"
-                onClick={handleShortlist}
-                disabled={actionLoading}
-                className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs transition shadow-2xs disabled:opacity-50"
-              >
-                {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>Shortlist candidate</span>
-              </button>
+                <button
+                  type="button"
+                  onClick={() => setOfferModal({ isOpen: true, type: "decline", remarks: "" })}
+                  disabled={actionLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-medium text-xs transition disabled:opacity-50"
+                >
+                  <X className="w-3.5 h-3.5 text-slate-500" />
+                  <span>Candidate Declined</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setOfferModal({ isOpen: true, type: "lapse", remarks: "" })}
+                  disabled={actionLoading}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 font-medium text-xs transition disabled:opacity-50"
+                >
+                  <Clock className="w-3.5 h-3.5 text-slate-400" />
+                  <span>Mark as Lapsed</span>
+                </button>
+              </>
+            ) : (
+              <>
+                {!isTerminal && (
+                  <button
+                    type="button"
+                    onClick={() => setIsRejectModalOpen(true)}
+                    disabled={actionLoading}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 font-medium text-xs transition disabled:opacity-50"
+                  >
+                    <span>Reject</span>
+                  </button>
+                )}
+
+                {!isTerminal && application.current_status !== "SHORTLISTED" && (
+                  <button
+                    type="button"
+                    onClick={handleShortlist}
+                    disabled={actionLoading}
+                    className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs transition shadow-2xs disabled:opacity-50"
+                  >
+                    {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                    <span>Shortlist candidate</span>
+                  </button>
+                )}
+              </>
             )}
           </div>
         }
@@ -501,6 +576,86 @@ export default function CandidateProfilePage() {
         candidateName={application.candidate.name}
         isLoading={actionLoading}
       />
+
+      {/* Offer Outcome Confirmation Modal */}
+      {offerModal.isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="bg-white rounded-lg border border-slate-200 max-w-md w-full p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+              <h3 className="text-base font-semibold text-slate-950">
+                {offerModal.type === "accept" && "Confirm Offer Acceptance"}
+                {offerModal.type === "decline" && "Record Candidate Declined"}
+                {offerModal.type === "lapse" && "Mark Offer as Lapsed"}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setOfferModal({ isOpen: false, type: null, remarks: "" })}
+                className="text-slate-400 hover:text-slate-600 p-1 rounded transition"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              {offerModal.type === "accept" &&
+                `Are you sure you want to mark ${application.candidate.name}'s offer as Accepted? This will update the status to OFFER_ACCEPTED and notify the internal HR team.`}
+              {offerModal.type === "decline" &&
+                `Are you sure you want to record that ${application.candidate.name} has declined the job offer? This will update the status to OFFER_DECLINED.`}
+              {offerModal.type === "lapse" &&
+                `Are you sure you want to mark the offer for ${application.candidate.name} as lapsed? This will update the status to OFFER_LAPSED.`}
+            </p>
+
+            <div>
+              <label className="block text-xs font-medium text-slate-700 mb-1.5">
+                Optional remarks / notes
+              </label>
+              <textarea
+                rows={3}
+                value={offerModal.remarks}
+                onChange={(e) => setOfferModal({ ...offerModal, remarks: e.target.value })}
+                placeholder={
+                  offerModal.type === "accept"
+                    ? "e.g. Candidate accepted offer; joining date scheduled"
+                    : offerModal.type === "decline"
+                    ? "e.g. Candidate accepted another opportunity"
+                    : "e.g. No response after follow-ups past deadline"
+                }
+                className="w-full text-xs p-2.5 rounded-md border border-slate-200 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 text-slate-900 placeholder:text-slate-400 resize-none"
+              />
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setOfferModal({ isOpen: false, type: null, remarks: "" })}
+                disabled={actionLoading}
+                className="px-3 py-1.5 text-xs font-medium text-slate-600 hover:text-slate-800 rounded-md border border-slate-200 transition"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmOfferAction}
+                disabled={actionLoading}
+                className={`px-4 py-1.5 text-xs font-medium text-white rounded-md transition shadow-2xs flex items-center gap-1.5 disabled:opacity-50 ${
+                  offerModal.type === "accept"
+                    ? "bg-emerald-600 hover:bg-emerald-700"
+                    : offerModal.type === "decline"
+                    ? "bg-rose-600 hover:bg-rose-700"
+                    : "bg-slate-800 hover:bg-slate-900"
+                }`}
+              >
+                {actionLoading && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+                <span>
+                  {offerModal.type === "accept" && "Confirm Accepted"}
+                  {offerModal.type === "decline" && "Record Declined"}
+                  {offerModal.type === "lapse" && "Mark as Lapsed"}
+                </span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 }

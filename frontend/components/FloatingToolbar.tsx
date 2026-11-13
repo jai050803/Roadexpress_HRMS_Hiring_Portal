@@ -7,7 +7,8 @@ interface FloatingToolbarProps {
   selectedCount: number;
   onShortlist?: () => void;
   onReject?: () => void;
-  onClear: () => void;
+  onClear?: () => void;
+  onClearSelection?: () => void;
   isLoading?: boolean;
 }
 
@@ -16,9 +17,11 @@ export default function FloatingToolbar({
   onShortlist,
   onReject,
   onClear,
+  onClearSelection,
   isLoading = false,
 }: FloatingToolbarProps) {
   if (selectedCount === 0) return null;
+  const handleClear = onClear || onClearSelection || (() => {});
 
   return (
     <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 flex items-center gap-3 px-4 py-2.5 bg-slate-900 text-white rounded-lg shadow-xl border border-slate-800 transition-all">
@@ -62,7 +65,7 @@ export default function FloatingToolbar({
 
         <button
           type="button"
-          onClick={onClear}
+          onClick={handleClear}
           className="p-1 text-slate-400 hover:text-white rounded transition ml-1"
           title="Clear selection"
           aria-label="Clear selection"

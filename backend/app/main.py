@@ -43,6 +43,13 @@ app.add_middleware(
 @app.exception_handler(StarletteHTTPException)
 async def http_exception_handler(request: Request, exc: StarletteHTTPException):
     detail = exc.detail
+    if exc.status_code == status.HTTP_413_REQUEST_ENTITY_TOO_LARGE:
+        detail_msg = detail.get("message", str(detail)) if isinstance(detail, dict) else str(detail)
+        return JSONResponse(
+            status_code=exc.status_code,
+            content={"detail": detail_msg},
+        )
+
     if isinstance(detail, dict):
         error_code = detail.get("error", "http_error")
         message = detail.get("message", str(detail))

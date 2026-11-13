@@ -271,3 +271,41 @@ async def test_cv_bank_service_export_csv_content(test_role: JobRole):
         assert data_row[9] == "95"
         assert data_row[10] == "Passed"
         assert "python" in data_row[11]
+
+
+@pytest.mark.asyncio
+async def test_cv_bank_pg_trgm_search_and_similarity_ordering(test_role: JobRole):
+    """
+    Test that pg_trgm similarity search orders by name similarity DESC, applied_at DESC,
+    and supports short search queries under 3 characters with ILIKE fallback.
+    """
+    # Seed candidates
+    await _seed_cv_candidate(
+        test_role.id,
+        name="Alexander Hamilton",
+        email="alexander@example.com",
+    )
+    await _seed_cv_candidate(
+        test_role.id,
+        name="Alex Smith",
+        email="smith.alex@example.com",
+    )
+    await _seed_cv_candidate(
+        test_role.id,
+        name="John Doe",
+        email="john.doe@example.com",
+    )
+
+    async with TestSessionLocal() as session:
+        # 1. Search with >= 3 characters (e.g. 'Alex')
+        # 'Alex Smith' has higher similarity to 'Alex' than 'Alexander Hamilton'
+        res = await CVBankService.search(session, CVBankFilterParams(search="Alex"))
+        assert res.total == 2
+        assert res.items[0].candidate_name == "Alex Smith"
+        assert res.items[1].candidate_name == "Alexander Hamilton"
+
+        # 2. Short query (< 3 chars, e.g. 'Jo') - uses ILIKE fallback
+        res_short = await CVBankService.search(session, CVBankFilterParams(search="Jo"))
+        assert res_short.total == 1
+        assert res_short.items[0].candidate_name == "John Doe"
+

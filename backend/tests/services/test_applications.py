@@ -171,6 +171,12 @@ async def test_idempotency_key_prevents_double_submit(
         assert role is not None
         assert role.applications_count == 1
 
+    # Verify Redis idempotency TTL is set to 48 hours (172800s)
+    from app.services.auth.service import get_redis_client
+    redis_client = get_redis_client()
+    ttl = redis_client.ttl(f"idempotency:{fixed_key}")
+    assert 0 < ttl <= 172800
+
 
 # ─── Service Method Tests for Coverage & Edge Cases ────────────────────────────
 
@@ -410,3 +416,45 @@ async def test_upload_cv_by_hr_validations(hr_user):
                 hr_user_id=hr_user.id,
             )
         assert "invalid_job_status" in str(exc2.value)
+
+
+@pytest.mark.asyncio
+async def test_concurrent_reference_number_generation_no_race_condition(
+    client: AsyncClient, test_role: JobRole, dummy_pdf_content: bytes
+):
+    """
+    Verify that concurrent burst submissions generate strictly unique reference numbers
+    backed by applications_global_seq without colliding or raising duplicate key violations.
+    """
+    import asyncio
+    from datetime import datetime, timezone
+
+    today_str = datetime.now(timezone.utc).strftime("%Y%m%d")
+
+    async def submit_candidate(i: int):
+        files = {
+            "resume": (f"candidate_{i}.pdf", dummy_pdf_content, "application/pdf")
+        }
+        data = {
+            "idempotency_key": str(uuid.uuid4()),
+            "job_role_id": str(test_role.id),
+            "name": f"Candidate {i}",
+            "email": f"burst_{i}@example.com",
+            "phone": f"+91-9876543{i:03d}",
+        }
+        response = await client.post("/applications", data=data, files=files)
+        return response
+
+    # 10 simultaneous applications
+    responses = await asyncio.gather(*[submit_candidate(i) for i in range(10)])
+
+    ref_numbers = []
+    for resp in responses:
+        assert resp.status_code == 201
+        body = resp.json()
+        ref = body["reference_number"]
+        assert ref.startswith(f"APP-{today_str}-")
+        ref_numbers.append(ref)
+
+    # All 10 must be strictly unique
+    assert len(set(ref_numbers)) == 10

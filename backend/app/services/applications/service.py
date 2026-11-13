@@ -1,3 +1,4 @@
+import logging
 import uuid
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
@@ -24,11 +25,14 @@ from app.schemas.applications import (
     ScreeningResultInfo,
     StatusHistoryItem,
 )
+from app.services.auth.service import get_redis_client
 from app.services.candidates.service import CandidateService
 from app.services.resumes.service import ResumeService
 from app.utils.reference_number import generate_reference_number
 from app.utils.storage import generate_presigned_download_url
 from app.workers.tasks import send_notification_task
+
+logger = logging.getLogger(__name__)
 
 
 STATUS_MAPPING: Dict[str, Dict[str, Any]] = {
@@ -37,7 +41,10 @@ STATUS_MAPPING: Dict[str, Dict[str, Any]] = {
     "SHORTLISTED": {"label": "Shortlisted — Interview Details Sent", "stage": 3},
     "INTERVIEW_SCHEDULED": {"label": "Shortlisted — Interview Details Sent", "stage": 3},
     "INTERVIEWED": {"label": "Under Review", "stage": 2},
-    "OFFERED": {"label": "Under Review", "stage": 2},
+    "OFFERED": {"label": "Offer Extended", "stage": 3},
+    "OFFER_ACCEPTED": {"label": "Welcome to Road Express", "stage": 4},
+    "OFFER_DECLINED": {"label": "Not Selected", "stage": 4},
+    "OFFER_LAPSED": {"label": "Not Selected", "stage": 4},
     "REJECTED": {"label": "Not Selected", "stage": 4},
     "CLOSED": {"label": "Not Selected", "stage": 4},
 }
@@ -48,10 +55,16 @@ VALID_TRANSITIONS: Dict[str, List[str]] = {
     "SHORTLISTED": ["INTERVIEW_SCHEDULED", "REJECTED"],
     "INTERVIEW_SCHEDULED": ["INTERVIEWED", "REJECTED"],
     "INTERVIEWED": ["OFFERED", "REJECTED"],
-    "OFFERED": ["CLOSED", "REJECTED"],
+    "OFFERED": ["OFFER_ACCEPTED", "OFFER_DECLINED", "OFFER_LAPSED", "CLOSED", "REJECTED"],
 }
 
-TERMINAL_STATES = {"REJECTED", "CLOSED"}
+TERMINAL_STATES = {
+    "REJECTED",
+    "CLOSED",
+    "OFFER_ACCEPTED",
+    "OFFER_DECLINED",
+    "OFFER_LAPSED",
+}
 
 
 class ApplicationService:
@@ -315,6 +328,13 @@ class ApplicationService:
 
         # 9. Commit transaction
         await db.commit()
+
+        # Record idempotency key in Redis with 48h TTL (172800s)
+        try:
+            redis_client = get_redis_client()
+            redis_client.set(f"idempotency:{idempotency_key}", ref_number, ex=172800)
+        except Exception as r_err:
+            logger.error(f"Failed to set idempotency in redis: {r_err}")
 
         # 10. Asynchronously trigger application acknowledgement notification
         try:
@@ -778,6 +798,148 @@ class ApplicationService:
         except Exception:
             pass
 
+        return await cls.get_application(db, application_id)
+
+    @classmethod
+    async def accept_offer(
+        cls,
+        db: AsyncSession,
+        application_id: uuid.UUID,
+        hr_user_id: uuid.UUID,
+        remarks: Optional[str] = None,
+        status_version: Optional[int] = None,
+    ) -> ApplicationDetailResponse:
+        """
+        Transition application from OFFERED to OFFER_ACCEPTED.
+        Requires no mandatory reason.
+        Writes to application_status_history with changed_by_type='hr'.
+        Triggers internal HR notification only (no candidate email).
+        """
+        stmt = (
+            select(Application)
+            .options(
+                joinedload(Application.candidate),
+                joinedload(Application.job_role),
+            )
+            .where(Application.id == application_id)
+        )
+        res = await db.execute(stmt)
+        application = res.scalar_one_or_none()
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "not_found", "message": "Application not found."},
+            )
+
+        await cls._transition_status(
+            db=db,
+            application=application,
+            to_status="OFFER_ACCEPTED",
+            reason=None,
+            remarks=remarks or "Candidate accepted offer",
+            changed_by=hr_user_id,
+            changed_by_type="hr",
+            expected_version=status_version,
+        )
+
+        await db.commit()
+
+        # Internal HR notification only
+        try:
+            send_notification_task.delay(str(application_id), "offer_accepted_hr_alert")
+        except Exception:
+            pass
+
+        return await cls.get_application(db, application_id)
+
+    @classmethod
+    async def decline_offer(
+        cls,
+        db: AsyncSession,
+        application_id: uuid.UUID,
+        hr_user_id: uuid.UUID,
+        remarks: Optional[str] = None,
+        status_version: Optional[int] = None,
+    ) -> ApplicationDetailResponse:
+        """
+        Transition application from OFFERED to OFFER_DECLINED.
+        Optional remarks.
+        Writes to application_status_history with changed_by_type='hr'.
+        No automated candidate email.
+        """
+        stmt = (
+            select(Application)
+            .options(
+                joinedload(Application.candidate),
+                joinedload(Application.job_role),
+            )
+            .where(Application.id == application_id)
+        )
+        res = await db.execute(stmt)
+        application = res.scalar_one_or_none()
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "not_found", "message": "Application not found."},
+            )
+
+        await cls._transition_status(
+            db=db,
+            application=application,
+            to_status="OFFER_DECLINED",
+            reason=None,
+            remarks=remarks or "Candidate declined offer",
+            changed_by=hr_user_id,
+            changed_by_type="hr",
+            expected_version=status_version,
+        )
+
+        await db.commit()
+        return await cls.get_application(db, application_id)
+
+    @classmethod
+    async def lapse_offer(
+        cls,
+        db: AsyncSession,
+        application_id: uuid.UUID,
+        hr_user_id: uuid.UUID,
+        remarks: Optional[str] = None,
+        status_version: Optional[int] = None,
+    ) -> ApplicationDetailResponse:
+        """
+        Transition application from OFFERED to OFFER_LAPSED.
+        Optional remarks.
+        Writes to application_status_history with changed_by_type='hr'.
+        No automated candidate email.
+        """
+        stmt = (
+            select(Application)
+            .options(
+                joinedload(Application.candidate),
+                joinedload(Application.job_role),
+            )
+            .where(Application.id == application_id)
+        )
+        res = await db.execute(stmt)
+        application = res.scalar_one_or_none()
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "not_found", "message": "Application not found."},
+            )
+
+        await cls._transition_status(
+            db=db,
+            application=application,
+            to_status="OFFER_LAPSED",
+            reason=None,
+            remarks=remarks or "Offer lapsed due to no candidate response",
+            changed_by=hr_user_id,
+            changed_by_type="hr",
+            expected_version=status_version,
+        )
+
+        await db.commit()
         return await cls.get_application(db, application_id)
 
     @classmethod

@@ -9,6 +9,8 @@ from app.models.resume import Resume
 from app.utils.storage import generate_presigned_download_url, save_resume_file
 from app.workers.tasks import parse_resume_task
 
+MAX_RESUME_SIZE_BYTES = 5_242_880  # 5 * 1024 * 1024 bytes (5MB)
+
 
 class ResumeService:
     @staticmethod
@@ -23,6 +25,13 @@ class ResumeService:
         resumes/{job_role_id}/{application_id}/{filename}
         Creates resume record with parse_status = 'pending', and enqueues Celery parsing task.
         """
+        # Validate size early if size is provided on UploadFile
+        if file.size and file.size > MAX_RESUME_SIZE_BYTES:
+            raise HTTPException(
+                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail="Resume file exceeds the 5MB maximum size limit.",
+            )
+
         # Save file to object storage
         stored_url, safe_filename, file_size, file_hash = await save_resume_file(
             file=file,

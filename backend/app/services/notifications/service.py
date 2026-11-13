@@ -27,6 +27,7 @@ SUBJECT_MAPPING = {
     "shortlisted": "Update: You have been shortlisted for {job_title} | Road Express",
     "rejected": "Road Express Application Update: {job_title}",
     "parse_failed_hr_alert": "HR Alert: Resume Parsing Failed for {job_title} | {candidate_name}",
+    "offer_accepted_hr_alert": "HR Alert: Offer Accepted for {job_title} | {candidate_name}",
 }
 
 
@@ -52,8 +53,8 @@ class NotificationService:
                 # 1. Idempotent Insert using DB constraint
                 insert_stmt = text(
                     """
-                    INSERT INTO notifications (id, application_id, type, channel, status, created_at)
-                    VALUES (gen_random_uuid(), :application_id, :type, 'email', 'pending', now())
+                    INSERT INTO notifications (id, application_id, type, channel, status, provider_status, created_at)
+                    VALUES (gen_random_uuid(), :application_id, :type, 'email', 'pending', 'pending', now())
                     ON CONFLICT (application_id, type) DO NOTHING
                     RETURNING id;
                     """
@@ -89,7 +90,7 @@ class NotificationService:
                 if not application or not application.candidate or not application.job_role:
                     err_msg = f"Cannot send notification: Application or relations missing for {application_id}"
                     logger.error(err_msg)
-                    await cls._update_status(db, notification_id, "failed", error_message=err_msg)
+                    await cls._update_status(db, notification_id, "failed", provider_status="failed", error_message=err_msg)
                     return False
 
                 candidate_email = application.candidate.email
@@ -107,7 +108,7 @@ class NotificationService:
                 except Exception as t_err:
                     err_msg = f"Template not found for type '{notification_type}': {str(t_err)}"
                     logger.error(err_msg)
-                    await cls._update_status(db, notification_id, "failed", error_message=err_msg)
+                    await cls._update_status(db, notification_id, "failed", provider_status="failed", error_message=err_msg)
                     return False
 
                 template_vars = {
@@ -135,7 +136,7 @@ class NotificationService:
                 )
 
                 # 4. Determine recipient: HR for internal alerts, candidate for normal pipeline
-                if notification_type == "parse_failed_hr_alert":
+                if notification_type in ("parse_failed_hr_alert", "offer_accepted_hr_alert"):
                     recipient_email = settings.EMAIL_FROM_ADDRESS or settings.SMTP_USER or "hr@roadexpress.com"
                 else:
                     recipient_email = candidate_email
@@ -147,20 +148,26 @@ class NotificationService:
                     html_content=html_body,
                 )
 
-                # 5. Update Status to 'sent'
-                await cls._update_status(db, notification_id, "sent")
+                # 5. Update Status to 'delivered'
+                await cls._update_status(db, notification_id, "sent", provider_status="delivered")
                 logger.info(f"Notification '{notification_type}' sent to {recipient_email}")
                 return True
 
             except Exception as e:
                 err_str = str(e)
-                logger.warning(
+                logger.error(
                     f"Email dispatch failed for notification {notification_id or notification_type}: {err_str}"
                 )
                 if notification_id:
                     try:
                         await db.rollback()
-                        await cls._update_status(db, notification_id, "failed", error_message=err_str)
+                        await cls._update_status(
+                            db,
+                            notification_id,
+                            "failed",
+                            provider_status="failed",
+                            error_message=err_str,
+                        )
                     except Exception as db_err:
                         logger.error(f"Failed to record notification failure: {db_err}")
                 return False
@@ -170,14 +177,17 @@ class NotificationService:
         db: AsyncSession,
         notification_id: uuid.UUID,
         status_value: str,
+        provider_status: Optional[str] = None,
         error_message: Optional[str] = None,
     ):
-        """Helper to update notification status and timestamp."""
+        """Helper to update notification status, provider_status, and timestamp."""
+        prov_status = provider_status or ("delivered" if status_value in ("sent", "delivered") else "failed" if status_value == "failed" else status_value)
         values = {
             "status": status_value,
+            "provider_status": prov_status,
             "error_message": error_message,
         }
-        if status_value == "sent":
+        if status_value in ("sent", "delivered") or prov_status == "delivered":
             values["sent_at"] = datetime.now(timezone.utc)
 
         stmt = (

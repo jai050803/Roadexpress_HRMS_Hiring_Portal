@@ -54,6 +54,7 @@ class Settings(BaseSettings):
 
     # Resume Upload
     MAX_RESUME_SIZE_MB: int = 5
+    MAX_RESUME_SIZE_BYTES: int = 5_242_880
     ALLOWED_RESUME_TYPES: str = "application/pdf"
 
     model_config = SettingsConfigDict(

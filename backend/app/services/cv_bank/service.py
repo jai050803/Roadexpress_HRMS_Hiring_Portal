@@ -106,9 +106,23 @@ class CVBankService:
             query = query.where(Application.applied_at <= to_dt)
             count_query = count_query.where(Application.applied_at <= to_dt)
 
-        if filters.search:
-            search_pattern = f"%{filters.search.strip()}%"
-            search_cond = (Candidate.name.ilike(search_pattern)) | (Candidate.email.ilike(search_pattern))
+        if filters.search and filters.search.strip():
+            clean_term = filters.search.strip()
+            ilike_term = f"%{clean_term}%"
+            if len(clean_term) >= 3:
+                # Use % operator for fuzzy matching and keep ILIKE as fallback
+                search_cond = or_(
+                    Candidate.name.op("%")(clean_term),
+                    Candidate.name.ilike(ilike_term),
+                    Candidate.email.op("%")(clean_term),
+                    Candidate.email.ilike(ilike_term),
+                )
+            else:
+                # For short queries under 3 chars, pg_trgm requires at least 3 characters to activate
+                search_cond = or_(
+                    Candidate.name.ilike(ilike_term),
+                    Candidate.email.ilike(ilike_term),
+                )
             query = query.where(search_cond)
             count_query = count_query.where(search_cond)
 
@@ -132,9 +146,15 @@ class CVBankService:
         total_res = await db.execute(count_query)
         total = total_res.scalar() or 0
 
-        # Paginate results ordered by applied_at DESC
+        # Paginate results ordered by relevance (if search active) and applied_at DESC
         offset = (page - 1) * limit
-        paginated_query = query.order_by(Application.applied_at.desc()).offset(offset).limit(limit)
+        order_clauses = []
+        if filters.search and filters.search.strip():
+            clean_term = filters.search.strip()
+            order_clauses.append(func.similarity(Candidate.name, clean_term).desc())
+        order_clauses.append(Application.applied_at.desc())
+
+        paginated_query = query.order_by(*order_clauses).offset(offset).limit(limit)
 
         result = await db.execute(paginated_query)
         apps = result.scalars().unique().all()
@@ -195,7 +215,12 @@ class CVBankService:
         Uses Python's csv module with StreamingResponse without buffering all results in memory.
         """
         query, _ = cls._build_base_query(filters)
-        query = query.order_by(Application.applied_at.desc())
+        order_clauses = []
+        if filters.search and filters.search.strip():
+            clean_term = filters.search.strip()
+            order_clauses.append(func.similarity(Candidate.name, clean_term).desc())
+        order_clauses.append(Application.applied_at.desc())
+        query = query.order_by(*order_clauses)
 
         async def csv_generator():
             pseudo_buffer = Echo()

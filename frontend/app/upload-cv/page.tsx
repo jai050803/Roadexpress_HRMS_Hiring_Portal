@@ -58,13 +58,9 @@ export default function UploadCvPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.type !== "application/pdf") {
-      setError("Only PDF files are accepted.");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Resume file must be under 5MB.");
+    if (file.type !== "application/pdf" || file.size > 5 * 1024 * 1024) {
+      setError("File must be a PDF under 5MB");
+      setResumeFile(null);
       return;
     }
 
@@ -84,7 +80,7 @@ export default function UploadCvPage() {
       return;
     }
     if (!resumeFile) {
-      setError("Please select a resume PDF file to upload.");
+      setError("File must be a PDF under 5MB");
       return;
     }
 

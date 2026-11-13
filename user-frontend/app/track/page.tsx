@@ -168,7 +168,7 @@ function TrackContent() {
             </div>
           </div>
 
-          {/* Visual Status Tracker */}
+          {/* Visual Status Tracker: Maps OFFER_ACCEPTED (Welcome to Road Express 4/4), OFFER_DECLINED/OFFER_LAPSED/REJECTED (Not Selected 4/4) */}
           <StatusTracker
             statusStage={result.status_stage}
             statusLabel={result.status_label}

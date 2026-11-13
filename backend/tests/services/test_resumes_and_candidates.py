@@ -120,7 +120,7 @@ async def test_resume_service_and_storage_validation(test_role: JobRole, dummy_p
         assert exc_mime.value.status_code == 400
         assert "invalid_file_type" in str(exc_mime.value.detail)
 
-        # 6. File size > 5MB rejection (>400)
+        # 6. File size > 5MB rejection (HTTP 413)
         oversized_bytes = b"%PDF-1.4\n" + (b"0" * (6 * 1024 * 1024))
         big_file = UploadFile(
             file=io.BytesIO(oversized_bytes),
@@ -129,8 +129,8 @@ async def test_resume_service_and_storage_validation(test_role: JobRole, dummy_p
         )
         with pytest.raises(HTTPException) as exc_size:
             await save_resume_file(big_file, app.id, test_role.id)
-        assert exc_size.value.status_code == 400
-        assert "file_too_large" in str(exc_size.value.detail)
+        assert exc_size.value.status_code == 413
+        assert exc_size.value.detail == "Resume file exceeds the 5MB maximum size limit."
 
 
 @pytest.mark.asyncio

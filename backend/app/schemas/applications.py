@@ -141,6 +141,11 @@ class ShortlistRequest(BaseModel):
     status_version: Optional[int] = None
 
 
+class OfferActionRequest(BaseModel):
+    remarks: Optional[str] = None
+    status_version: Optional[int] = None
+
+
 class RejectRequest(BaseModel):
     reason: str = Field(..., min_length=1, description="Mandatory rejection reason")
     remarks: Optional[str] = None

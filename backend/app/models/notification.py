@@ -41,7 +41,13 @@ class Notification(Base):
         default="pending",
         server_default="pending",
         nullable=False,
-    )  # pending | sent | failed
+    )  # pending | sent | delivered | failed
+    provider_status: Mapped[str] = mapped_column(
+        String(50),
+        default="pending",
+        server_default="pending",
+        nullable=False,
+    )  # pending | delivered | failed
     sent_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     error_message: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
@@ -57,5 +63,6 @@ class Notification(Base):
     __table_args__ = (
         UniqueConstraint("application_id", "type", name="uq_notifications_application_type"),
         Index("idx_notifications_status", "status"),
+        Index("idx_notifications_provider_status", "provider_status"),
         Index("idx_notifications_application", "application_id"),
     )

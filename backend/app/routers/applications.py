@@ -1,6 +1,6 @@
 import uuid
 from typing import Optional
-from fastapi import APIRouter, Body, Depends, File, Form, Query, UploadFile, status
+from fastapi import APIRouter, Body, Depends, File, Form, HTTPException, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -14,10 +14,12 @@ from app.schemas.applications import (
     BulkActionResponse,
     BulkRejectRequest,
     BulkShortlistRequest,
+    OfferActionRequest,
     RejectRequest,
     ShortlistRequest,
 )
 from app.services.applications.service import ApplicationService
+from app.services.resumes.service import MAX_RESUME_SIZE_BYTES
 
 router = APIRouter(prefix="/applications", tags=["Applications"])
 
@@ -46,6 +48,12 @@ async def submit_application(
     - Uploads resume & records metadata
     - Returns unique monotonic reference number (APP-YYYYMMDD-NNNN)
     """
+    if resume.size and resume.size > MAX_RESUME_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Resume file exceeds the 5MB maximum size limit.",
+        )
+
     return await ApplicationService.submit_application(
         db=db,
         idempotency_key=idempotency_key,
@@ -80,6 +88,12 @@ async def upload_cv_by_hr(
     - Upserts candidate
     - Tags source as 'email_upload' and uploaded_by_hr
     """
+    if resume.size and resume.size > MAX_RESUME_SIZE_BYTES:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail="Resume file exceeds the 5MB maximum size limit.",
+        )
+
     return await ApplicationService.upload_cv_by_hr(
         db=db,
         job_role_id=job_role_id,
@@ -282,4 +296,88 @@ async def reject_application(
         remarks=payload.remarks,
         custom_message=payload.custom_message,
         status_version=payload.status_version,
+    )
+
+
+@router.post(
+    "/{id}/accept-offer",
+    response_model=ApplicationDetailResponse,
+    summary="Record candidate offer acceptance (HR only)",
+)
+async def accept_offer(
+    id: uuid.UUID,
+    payload: Optional[OfferActionRequest] = Body(default=None),
+    current_user: HRUser = Depends(require_hr_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Transitions application from OFFERED to OFFER_ACCEPTED.
+    Requires no mandatory reason.
+    Logs transition in application_status_history with changed_by_type='hr'.
+    Dispatches internal HR notification only.
+    """
+    remarks = payload.remarks if payload else None
+    status_version = payload.status_version if payload else None
+    return await ApplicationService.accept_offer(
+        db=db,
+        application_id=id,
+        hr_user_id=current_user.id,
+        remarks=remarks,
+        status_version=status_version,
+    )
+
+
+@router.post(
+    "/{id}/decline-offer",
+    response_model=ApplicationDetailResponse,
+    summary="Record candidate offer decline (HR only)",
+)
+async def decline_offer(
+    id: uuid.UUID,
+    payload: Optional[OfferActionRequest] = Body(default=None),
+    current_user: HRUser = Depends(require_hr_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Transitions application from OFFERED to OFFER_DECLINED.
+    Optional remarks.
+    Logs transition in application_status_history with changed_by_type='hr'.
+    No automated email sent.
+    """
+    remarks = payload.remarks if payload else None
+    status_version = payload.status_version if payload else None
+    return await ApplicationService.decline_offer(
+        db=db,
+        application_id=id,
+        hr_user_id=current_user.id,
+        remarks=remarks,
+        status_version=status_version,
+    )
+
+
+@router.post(
+    "/{id}/lapse-offer",
+    response_model=ApplicationDetailResponse,
+    summary="Mark candidate offer as lapsed (HR only)",
+)
+async def lapse_offer(
+    id: uuid.UUID,
+    payload: Optional[OfferActionRequest] = Body(default=None),
+    current_user: HRUser = Depends(require_hr_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Transitions application from OFFERED to OFFER_LAPSED.
+    Optional remarks.
+    Logs transition in application_status_history with changed_by_type='hr'.
+    No automated email sent.
+    """
+    remarks = payload.remarks if payload else None
+    status_version = payload.status_version if payload else None
+    return await ApplicationService.lapse_offer(
+        db=db,
+        application_id=id,
+        hr_user_id=current_user.id,
+        remarks=remarks,
+        status_version=status_version,
     )

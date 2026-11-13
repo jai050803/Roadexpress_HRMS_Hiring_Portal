@@ -1,5 +1,5 @@
 import uuid
-from typing import List, Optional
+from typing import List, Optional, Union
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -201,11 +201,11 @@ async def preview_job_content(
     )
 
 
-# ─── Single Job Public Endpoint ──────────────────────────────────────────────
+# ─── Single Job Public / HR Endpoint ──────────────────────────────────────────
 
 @router.get(
     "/{id}",
-    response_model=PublicJobDetail,
+    response_model=Union[HRJobResponse, PublicJobDetail],
     status_code=status.HTTP_200_OK,
     summary="Get single published job role (Public / HR)",
 )
@@ -217,8 +217,8 @@ async def get_published_job(
     """
     Get a single job role.
     If public candidate (unauthenticated), returns only if published (otherwise 404).
-    If authenticated HR user, returns the role in any status (draft, published, closed).
-    Never exposes internal applications_count.
+    If authenticated HR user, returns the role in any status (draft, published, closed) with full HR metadata.
+    Never exposes internal applications_count to public candidates.
     """
     role = await jobs_service.get_job(db=db, role_id=id)
     if not role:
@@ -239,6 +239,40 @@ async def get_published_job(
                 "message": "Job role not found or not currently published",
                 "details": {},
             },
+        )
+
+    if hr_user:
+        if not role.linkedin_post_copy:
+            role.linkedin_post_copy = jobs_service.generate_linkedin_copy(role)
+            try:
+                await db.commit()
+            except Exception:
+                pass
+
+        return HRJobResponse(
+            id=role.id,
+            title=role.title,
+            department=role.department,
+            employment_type=role.employment_type,
+            location=role.location,
+            work_mode=role.work_mode,
+            education_qualification=role.education_qualification,
+            min_experience_years=role.min_experience_years,
+            required_skills=role.required_skills,
+            responsibilities_text=role.responsibilities_text,
+            salary_band=role.salary_band,
+            jd_text=role.jd_text,
+            application_deadline=role.application_deadline,
+            max_applications=role.max_applications,
+            applications_count=role.applications_count,
+            status=role.status,
+            linkedin_post_copy=role.linkedin_post_copy,
+            linkedin_posted=role.linkedin_posted,
+            linkedin_posted_at=role.linkedin_posted_at,
+            created_by=role.created_by,
+            created_at=role.created_at,
+            updated_at=role.updated_at,
+            applications_still_open=jobs_service.calculate_still_open(role),
         )
 
     return PublicJobDetail(

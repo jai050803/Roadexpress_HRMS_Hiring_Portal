@@ -253,3 +253,112 @@ async def test_bulk_shortlist_and_reject(
     )
     assert res_reject.status_code == 200
     assert res_reject.json()["processed_count"] == 1
+
+
+@pytest_asyncio.fixture
+async def offered_app(db, test_role: JobRole, seeded_candidate: Candidate) -> Application:
+    app = Application(
+        candidate_id=seeded_candidate.id,
+        job_role_id=test_role.id,
+        reference_number=f"APP-20261105-{uuid.uuid4().int % 9000 + 1000}",
+        current_status="OFFERED",
+        source="portal",
+        idempotency_key=uuid.uuid4(),
+        status_version=1,
+    )
+    db.add(app)
+    await db.commit()
+    await db.refresh(app)
+    return app
+
+
+@pytest.mark.asyncio
+async def test_accept_offer_endpoint(
+    client: AsyncClient, offered_app: Application, hr_auth_headers: dict
+):
+    """POST /v1/applications/{id}/accept-offer transitions OFFERED -> OFFER_ACCEPTED."""
+    res = await client.post(
+        f"/v1/applications/{offered_app.id}/accept-offer",
+        json={"remarks": "Candidate confirmed joining date Dec 1"},
+        headers=hr_auth_headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["current_status"] == "OFFER_ACCEPTED"
+    assert data["status_label"] == "Welcome to Road Express"
+    assert data["status_stage"] == 4
+
+    # Verify history
+    history = data["status_history"]
+    latest = history[0]
+    assert latest["to_status"] == "OFFER_ACCEPTED"
+    assert latest["from_status"] == "OFFERED"
+    assert latest["changed_by_type"] == "hr"
+
+
+@pytest.mark.asyncio
+async def test_decline_offer_endpoint(
+    client: AsyncClient, offered_app: Application, hr_auth_headers: dict
+):
+    """POST /v1/applications/{id}/decline-offer transitions OFFERED -> OFFER_DECLINED."""
+    res = await client.post(
+        f"/v1/applications/{offered_app.id}/decline-offer",
+        json={"remarks": "Candidate opted for local relocation"},
+        headers=hr_auth_headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["current_status"] == "OFFER_DECLINED"
+    assert data["status_label"] == "Not Selected"
+    assert data["status_stage"] == 4
+
+    history = data["status_history"]
+    latest = history[0]
+    assert latest["to_status"] == "OFFER_DECLINED"
+    assert latest["changed_by_type"] == "hr"
+
+
+@pytest.mark.asyncio
+async def test_lapse_offer_endpoint(
+    client: AsyncClient, offered_app: Application, hr_auth_headers: dict
+):
+    """POST /v1/applications/{id}/lapse-offer transitions OFFERED -> OFFER_LAPSED."""
+    res = await client.post(
+        f"/v1/applications/{offered_app.id}/lapse-offer",
+        json={"remarks": "No candidate reply past 14 days"},
+        headers=hr_auth_headers,
+    )
+    assert res.status_code == 200
+    data = res.json()
+    assert data["current_status"] == "OFFER_LAPSED"
+    assert data["status_label"] == "Not Selected"
+    assert data["status_stage"] == 4
+
+    history = data["status_history"]
+    latest = history[0]
+    assert latest["to_status"] == "OFFER_LAPSED"
+    assert latest["changed_by_type"] == "hr"
+
+
+@pytest.mark.asyncio
+async def test_cannot_transition_from_offer_accepted_terminal_state(
+    client: AsyncClient, offered_app: Application, hr_auth_headers: dict
+):
+    """OFFER_ACCEPTED is terminal; subsequent transitions must be rejected."""
+    # First accept
+    res = await client.post(
+        f"/v1/applications/{offered_app.id}/accept-offer",
+        json={},
+        headers=hr_auth_headers,
+    )
+    assert res.status_code == 200
+
+    # Try to decline an already accepted offer
+    res_decline = await client.post(
+        f"/v1/applications/{offered_app.id}/decline-offer",
+        json={},
+        headers=hr_auth_headers,
+    )
+    assert res_decline.status_code == 400
+    assert res_decline.json()["error"] == "terminal_state"
+

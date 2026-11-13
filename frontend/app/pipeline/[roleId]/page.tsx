@@ -240,27 +240,41 @@ export default function RolePipelinePage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-6 text-xs font-tabular">
-              <div>
-                <span className="text-slate-500 text-xs block">Total applicants</span>
-                <span className="text-slate-950 font-semibold text-sm">
-                  {job.applications_count}
-                </span>
-              </div>
-              <div>
-                <span className="text-slate-500 text-xs block">Shortlisted</span>
-                <span className="text-brand-600 font-semibold text-sm">
-                  {counts.SHORTLISTED}
-                </span>
-              </div>
-              {job.max_applications && (
-                <div>
-                  <span className="text-slate-500 text-xs block">Target quota</span>
-                  <span className="text-slate-950 font-semibold text-sm">
-                    {job.applications_count} / {job.max_applications}
+            {/* Executive Stat Pods */}
+            <div className="flex items-center">
+              <div className="flex items-center bg-slate-50/90 border border-slate-200/80 rounded-lg px-4 py-2 divide-x divide-slate-200">
+                <div className="pr-4 text-left">
+                  <span className="text-[11px] font-medium text-slate-500 block leading-tight">
+                    Total applicants
+                  </span>
+                  <span className="text-base font-semibold text-slate-900 font-tabular leading-snug">
+                    {job.applications_count ?? allCandidates.length}
                   </span>
                 </div>
-              )}
+
+                <div className="px-4 text-left">
+                  <span className="text-[11px] font-medium text-slate-500 block leading-tight">
+                    Shortlisted
+                  </span>
+                  <span className={`text-base font-semibold font-tabular leading-snug ${
+                    counts.SHORTLISTED > 0 ? "text-brand-600" : "text-slate-700"
+                  }`}>
+                    {counts.SHORTLISTED}
+                  </span>
+                </div>
+
+                {job.max_applications ? (
+                  <div className="pl-4 text-left">
+                    <span className="text-[11px] font-medium text-slate-500 block leading-tight">
+                      Target quota
+                    </span>
+                    <span className="text-base font-semibold text-slate-900 font-tabular leading-snug">
+                      {job.applications_count ?? allCandidates.length}
+                      <span className="text-slate-400 font-normal text-xs ml-1">/ {job.max_applications}</span>
+                    </span>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         )}

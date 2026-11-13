@@ -92,7 +92,7 @@ export default function ApplyPage() {
     }
 
     if (!resumeFile) {
-      errors.resume = "Please upload your resume in PDF format (max 5MB).";
+      errors.resume = "File must be a PDF under 5MB";
     }
 
     setValidationErrors(errors);

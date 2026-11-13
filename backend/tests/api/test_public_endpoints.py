@@ -99,7 +99,7 @@ async def test_public_application_rejects_non_pdf(client: AsyncClient, test_role
 
 @pytest.mark.asyncio
 async def test_public_application_rejects_oversized_file(client: AsyncClient, test_role: JobRole):
-    """Uploading a file exceeding 5MB returns 400."""
+    """Uploading a file exceeding 5MB returns HTTP 413 with detail."""
     form_data = {
         "idempotency_key": str(uuid.uuid4()),
         "job_role_id": str(test_role.id),
@@ -110,5 +110,5 @@ async def test_public_application_rejects_oversized_file(client: AsyncClient, te
     files = {"resume": ("huge.pdf", oversized_bytes, "application/pdf")}
 
     res = await client.post("/v1/applications", data=form_data, files=files)
-    assert res.status_code == 400
-    assert "5MB" in res.json()["message"]
+    assert res.status_code == 413
+    assert res.json() == {"detail": "Resume file exceeds the 5MB maximum size limit."}
