@@ -6,6 +6,8 @@ import {
   AlertCircle,
   ArrowRight,
   Briefcase,
+  CalendarCheck,
+  CalendarDays,
   Check,
   CheckCircle,
   Clock,
@@ -15,11 +17,14 @@ import {
   FileUp,
   Filter,
   Loader2,
+  MapPin,
+  Phone,
   Plus,
   RefreshCw,
   Search,
   Sparkles,
   Users,
+  Video,
   X,
 } from "lucide-react";
 import AppShell from "@/components/AppShell";
@@ -28,17 +33,21 @@ import ScoreIndicator from "@/components/ScoreIndicator";
 import StatusBadge from "@/components/StatusBadge";
 import RejectionModal from "@/components/RejectionModal";
 import {
+  getTodayInterviews,
   listAllJobs,
   listApplications,
+  listInterviews,
   rejectApplication,
   screenApplication,
   shortlistApplication,
 } from "@/lib/api";
-import { ApplicationListItem, JobRole, RejectionReason } from "@/lib/types";
+import { ApplicationListItem, InterviewItem, JobRole, RejectionReason } from "@/lib/types";
 
 export default function DashboardPage() {
   const [jobs, setJobs] = useState<JobRole[]>([]);
   const [applications, setApplications] = useState<ApplicationListItem[]>([]);
+  const [todayInterviews, setTodayInterviews] = useState<InterviewItem[] | null>(null);
+  const [upcomingWeekCount, setUpcomingWeekCount] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -57,12 +66,25 @@ export default function DashboardPage() {
     try {
       setLoading(true);
       setError(null);
-      const [jobsData, appsData] = await Promise.all([
+
+      const now = new Date();
+      const todayIso = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 0, 0, 0)
+      ).toISOString();
+      const weekFromNow = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 7, 23, 59, 59)
+      ).toISOString();
+
+      const [jobsData, appsData, todayInterviewsData, weekInterviewsData] = await Promise.all([
         listAllJobs(),
         listApplications({ limit: 100 }),
+        getTodayInterviews().catch(() => null),
+        listInterviews({ date_from: todayIso, date_to: weekFromNow, status: "scheduled" }).catch(() => null),
       ]);
       setJobs(jobsData || []);
       setApplications(appsData.items || []);
+      setTodayInterviews(todayInterviewsData || []);
+      setUpcomingWeekCount(weekInterviewsData ? weekInterviewsData.length : 0);
     } catch (err: any) {
       setError(err.message || "Failed to load dashboard data");
     } finally {
@@ -146,6 +168,32 @@ export default function DashboardPage() {
     }
   };
 
+  const formatTime = (isoString?: string) => {
+    if (!isoString) return "";
+    try {
+      const d = new Date(isoString);
+      return d.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+    } catch {
+      return isoString;
+    }
+  };
+
+  const isWithinNext2Hours = (isoString?: string) => {
+    if (!isoString) return false;
+    try {
+      const interviewTime = new Date(isoString).getTime();
+      const now = Date.now();
+      const diffMs = interviewTime - now;
+      return diffMs > 0 && diffMs <= 2 * 60 * 60 * 1000;
+    } catch {
+      return false;
+    }
+  };
+
   // Triage list computation
   const getDisplayedCandidates = () => {
     if (triageTab === "needs_review") {
@@ -208,7 +256,7 @@ export default function DashboardPage() {
         )}
 
         {/* 1. Operational Triage Summary Cards (Action-Oriented, NOT Passive Vanity) */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {/* Card 1: Review Queue / Awaiting Action */}
           <div className="bg-white p-4 rounded-md border border-slate-200/90 shadow-2xs">
             <div className="flex items-center justify-between text-slate-500 mb-1.5">
@@ -239,7 +287,35 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Card 2: Interview Pipeline */}
+          {/* Card 2: Upcoming This Week */}
+          <div className="bg-white p-4 rounded-md border border-slate-200/90 shadow-2xs">
+            <div className="flex items-center justify-between text-slate-500 mb-1.5">
+              <span className="text-xs font-medium text-slate-700">
+                Upcoming this week
+              </span>
+              <CalendarDays className="w-3.5 h-3.5 text-slate-400" />
+            </div>
+            <div className="flex items-baseline gap-2">
+              <span className="text-2xl font-semibold text-slate-950 font-tabular">
+                {loading ? "--" : upcomingWeekCount}
+              </span>
+              <span className="text-xs text-slate-500 font-tabular">
+                scheduled
+              </span>
+            </div>
+            <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500 font-tabular">
+              <span>Next 7 days</span>
+              <button
+                type="button"
+                onClick={() => setTriageTab("shortlisted")}
+                className="text-slate-700 hover:text-slate-950 font-medium text-xs underline"
+              >
+                View list
+              </button>
+            </div>
+          </div>
+
+          {/* Card 3: Interview Pipeline */}
           <div className="bg-white p-4 rounded-md border border-slate-200/90 shadow-2xs">
             <div className="flex items-center justify-between text-slate-500 mb-1.5">
               <span className="text-xs font-medium text-slate-700">
@@ -256,7 +332,7 @@ export default function DashboardPage() {
               </span>
             </div>
             <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-              <span>Ready for panel scheduling</span>
+              <span>Ready for scheduling</span>
               <button
                 type="button"
                 onClick={() => setTriageTab("shortlisted")}
@@ -267,7 +343,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Card 3: Active Job Roles */}
+          {/* Card 4: Active Job Roles */}
           <div className="bg-white p-4 rounded-md border border-slate-200/90 shadow-2xs">
             <div className="flex items-center justify-between text-slate-500 mb-1.5">
               <span className="text-xs font-medium text-slate-700">
@@ -291,7 +367,7 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Card 4: Daily Inflow & Capacity */}
+          {/* Card 5: Daily Inflow & Capacity */}
           <div className="bg-white p-4 rounded-md border border-slate-200/90 shadow-2xs">
             <div className="flex items-center justify-between text-slate-500 mb-1.5">
               <span className="text-xs font-medium text-slate-700">
@@ -315,6 +391,101 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+
+        {/* Today's Interviews Strip */}
+        {todayInterviews !== null && (
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <h2 className="text-xs font-semibold text-slate-900 tracking-tight">
+                  Today's Interviews
+                </h2>
+                {todayInterviews.length > 0 && (
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-600 font-tabular">
+                    {todayInterviews.length}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {todayInterviews.length === 0 ? (
+              <div className="bg-white rounded-lg border border-slate-200 p-4 flex items-center gap-2 text-xs text-slate-500">
+                <CalendarCheck className="w-4 h-4 text-slate-400 shrink-0" />
+                <span>No interviews scheduled for today</span>
+              </div>
+            ) : (
+              <div className="flex md:grid md:grid-cols-4 gap-4 overflow-x-auto md:overflow-hidden pb-2 md:pb-0">
+                {todayInterviews.slice(0, 4).map((interview) => {
+                  const within2Hours = isWithinNext2Hours(interview.scheduled_at);
+                  return (
+                    <div
+                      key={interview.id}
+                      className="min-w-[240px] md:min-w-0 bg-white border border-slate-200 rounded-lg p-4 hover:shadow-sm transition flex flex-col justify-between gap-3"
+                    >
+                      <div>
+                        <div className="flex items-start justify-between gap-2 mb-1">
+                          <h3
+                            className="font-medium text-slate-900 text-sm truncate flex-1"
+                            title={interview.candidate_name || "Candidate"}
+                          >
+                            {interview.candidate_name || "Candidate"}
+                          </h3>
+                          <span
+                            className={`font-mono text-sm font-bold shrink-0 ${
+                              within2Hours ? "text-[#F4511E]" : "text-slate-900"
+                            }`}
+                          >
+                            {formatTime(interview.scheduled_at)}
+                          </span>
+                        </div>
+                        <p
+                          className="text-sm text-slate-500 truncate"
+                          title={interview.job_title || "Role"}
+                        >
+                          {interview.job_title || "Role"}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                        <div className="flex items-center gap-2">
+                          {interview.mode === "video" && (
+                            <span className="inline-flex items-center gap-1 text-slate-600">
+                              <Video className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Video</span>
+                            </span>
+                          )}
+                          {interview.mode === "phone" && (
+                            <span className="inline-flex items-center gap-1 text-slate-600">
+                              <Phone className="w-3.5 h-3.5 text-slate-400" />
+                              <span>Phone</span>
+                            </span>
+                          )}
+                          {interview.mode === "in_person" && (
+                            <span className="inline-flex items-center gap-1 text-slate-600">
+                              <MapPin className="w-3.5 h-3.5 text-slate-400" />
+                              <span>In Person</span>
+                            </span>
+                          )}
+                          <span className="text-slate-300">·</span>
+                          <span className="text-xs text-slate-400 font-tabular">
+                            {interview.duration_minutes || 60} min
+                          </span>
+                        </div>
+
+                        <Link
+                          href={`/candidates/${interview.candidate_id || interview.application_id}`}
+                          className="inline-flex items-center text-xs font-medium text-slate-700 hover:text-slate-950 transition"
+                        >
+                          → View
+                        </Link>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 2. Main Workload Section (7 : 5 Balanced Layout) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">

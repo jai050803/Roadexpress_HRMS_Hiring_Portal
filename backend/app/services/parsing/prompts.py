@@ -68,7 +68,8 @@ def _extract_fallback_heuristics(text: str) -> Dict[str, Any]:
         "route optimization", "data analysis", "tableau", "power bi",
         "operations management", "warehouse management", "wms", "tms",
         "financial modeling", "auditing", "taxation", "tally", "git",
-        "aws", "minio", "linux", "typescript", "react", "next.js", "rest api"
+        "aws", "minio", "linux", "typescript", "react", "next.js", "rest api",
+        "c++", "pytorch", "tensorflow", "scikit-learn", "langchain", "ocr"
     ]
     text_lower = text.lower()
     found_skills = []
@@ -80,13 +81,53 @@ def _extract_fallback_heuristics(text: str) -> Dict[str, Any]:
     exp_matches = re.findall(r"(\d+)\+?\s*(?:years?|yrs?)\s*(?:of)?\s*experience", text_lower)
     total_exp = float(exp_matches[0]) if exp_matches else None
 
+    # 6. Education heuristic (extract degrees from text lines)
+    education_items = []
+    degree_patterns = [
+        r"(B\.?Tech|B\.?E\.?|Bachelor of Technology|Bachelor of Engineering|BCA|B\.?Sc|Bachelor of Science)",
+        r"(M\.?Tech|M\.?E\.?|Master of Technology|MCA|M\.?Sc|MBA)",
+        r"(Senior Secondary|Higher Secondary|Class XII|12th|CBSE|ICSE)",
+    ]
+    for line in lines:
+        for deg_pat in degree_patterns:
+            deg_match = re.search(deg_pat, line, re.IGNORECASE)
+            if deg_match:
+                deg_name = deg_match.group(0).strip()
+                year_match = re.search(r"\b(19\d{2}|20\d{2})\b", line)
+                year = int(year_match.group(0)) if year_match else None
+                education_items.append({
+                    "degree": deg_name,
+                    "field": None,
+                    "institution": line[:60],
+                    "year": year
+                })
+                break
+
+    # 7. Work experience heuristic (extract roles/companies)
+    experience_items = []
+    role_pattern = re.compile(
+        r"(intern|internship|developer|engineer|analyst|manager|specialist|lead|consultant)",
+        re.IGNORECASE
+    )
+    for i, line in enumerate(lines):
+        if role_pattern.search(line) and len(line) < 80 and not re.search(r"@|linkedin|github", line):
+            desc = " ".join(lines[i+1:i+3]) if i + 1 < len(lines) else ""
+            experience_items.append({
+                "title": line.strip(),
+                "company": "Organization",
+                "duration_months": 6,
+                "description": desc[:250] if desc else None
+            })
+            if len(experience_items) >= 4:
+                break
+
     return {
         "name": name,
         "email": email,
         "phone": phone,
-        "total_experience_years": total_exp,
-        "education": [],
-        "experience": [],
+        "total_experience_years": total_exp or (0.5 if experience_items else None),
+        "education": education_items,
+        "experience": experience_items,
         "skills": list(dict.fromkeys(found_skills)),
         "certifications": [],
     }
@@ -121,48 +162,58 @@ def parse_resume_text_with_gemini(raw_text: str, max_retries: int = 3) -> Dict[s
         logger.info("GEMINI_API_KEY not configured or is placeholder; using deterministic heuristic parser.")
         return _extract_fallback_heuristics(raw_text)
 
-    # Attempt structured generation with Google GenAI
+    models_to_try = [
+        settings.clean_gemini_model,
+        "gemini-3.5-flash-lite",
+        "gemini-flash-lite-latest",
+        "gemini-3.5-flash",
+    ]
+    candidate_models = list(dict.fromkeys([m for m in models_to_try if m]))
+
     last_error: Optional[Exception] = None
-    model_name = settings.clean_gemini_model
-    for attempt in range(1, max_retries + 1):
-        try:
-            from google import genai
-            from google.genai import types
+    for model_name in candidate_models:
+        for attempt in range(1, max_retries + 1):
+            try:
+                from google import genai
+                from google.genai import types
 
-            client = genai.Client(api_key=api_key)
-            prompt = f"Extract structured resume information from the following text:\n\n{raw_text}"
+                client = genai.Client(api_key=api_key)
+                prompt = f"Extract structured resume information from the following text:\n\n{raw_text}"
 
-            response = client.models.generate_content(
-                model=model_name,
-                contents=prompt,
-                config=types.GenerateContentConfig(
-                    system_instruction=RESUME_EXTRACTION_SYSTEM_PROMPT,
-                    response_mime_type="application/json",
-                    response_schema=ParsedResumeSchema,
-                    temperature=0.1,
-                ),
-            )
-
-            raw_response_text = response.text or ""
-            data = json.loads(raw_response_text)
-
-            # Ensure all skills are normalized to lowercase
-            if "skills" in data and isinstance(data["skills"], list):
-                data["skills"] = list(
-                    dict.fromkeys(
-                        [s.lower().strip() for s in data["skills"] if isinstance(s, str) and s.strip()]
-                    )
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=prompt,
+                    config=types.GenerateContentConfig(
+                        system_instruction=RESUME_EXTRACTION_SYSTEM_PROMPT,
+                        response_mime_type="application/json",
+                        response_schema=ParsedResumeSchema,
+                        temperature=0.1,
+                    ),
                 )
 
-            return data
+                raw_response_text = response.text or ""
+                data = json.loads(raw_response_text)
 
-        except Exception as e:
-            last_error = e
-            logger.warning(
-                f"Gemini resume parsing attempt {attempt}/{max_retries} failed: {e}. "
-                f"{'Retrying...' if attempt < max_retries else 'All retries exhausted.'}"
-            )
+                # Ensure all skills are normalized to lowercase
+                if "skills" in data and isinstance(data["skills"], list):
+                    data["skills"] = list(
+                        dict.fromkeys(
+                            [s.lower().strip() for s in data["skills"] if isinstance(s, str) and s.strip()]
+                        )
+                    )
 
-    logger.error(f"Gemini extraction failed after {max_retries} retries ({last_error}). Falling back to heuristic extractor.")
+                return data
+
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    f"Gemini resume parsing attempt {attempt}/{max_retries} with {model_name} failed: {e}. "
+                )
+                err_str = str(e).lower()
+                if "429" in err_str or "resource_exhausted" in err_str or "not_found" in err_str or "503" in err_str:
+                    logger.info(f"Model {model_name} rate-limited or unavailable; trying next candidate model...")
+                    break
+
+    logger.error(f"All Gemini models exhausted ({last_error}). Falling back to heuristic extractor.")
     fallback = _extract_fallback_heuristics(raw_text)
     return fallback

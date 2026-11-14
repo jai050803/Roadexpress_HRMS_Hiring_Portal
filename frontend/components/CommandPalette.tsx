@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import {
   Briefcase,
+  Calendar,
   FileUp,
   LayoutDashboard,
   LogOut,
@@ -63,6 +64,13 @@ export default function CommandPalette({ isOpen, onClose }: CommandPaletteProps)
       subtitle: "Overview of open roles and activity",
       icon: LayoutDashboard,
       action: () => router.push("/dashboard"),
+    },
+    {
+      id: "nav-interviews",
+      title: "Interviews Workspace",
+      subtitle: "Weekly calendar, scheduled & completed interviews",
+      icon: Calendar,
+      action: () => router.push("/interviews"),
     },
     {
       id: "nav-cvbank",

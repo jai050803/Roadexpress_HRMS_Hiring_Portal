@@ -28,6 +28,9 @@ SUBJECT_MAPPING = {
     "rejected": "Road Express Application Update: {job_title}",
     "parse_failed_hr_alert": "HR Alert: Resume Parsing Failed for {job_title} | {candidate_name}",
     "offer_accepted_hr_alert": "HR Alert: Offer Accepted for {job_title} | {candidate_name}",
+    "interview_invite": "Interview Scheduled — {job_title} at Road Express Freight",
+    "interview_rescheduled": "Interview Rescheduled — {job_title} at Road Express Freight",
+    "interview_cancelled": "Interview Update — {job_title} at Road Express Freight",
 }
 
 

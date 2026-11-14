@@ -145,38 +145,49 @@ def call_gemini_screening(
 
     user_content = f"Evaluate this candidate application against the target role:\n\n{json.dumps(prompt_data, indent=2)}"
 
+    models_to_try = [
+        settings.clean_gemini_model,
+        "gemini-3.5-flash-lite",
+        "gemini-flash-lite-latest",
+        "gemini-3.5-flash",
+    ]
+    candidate_models = list(dict.fromkeys([m for m in models_to_try if m]))
+
     last_error: Optional[Exception] = None
-    model_name = settings.clean_gemini_model
-    for attempt in range(1, max_retries + 1):
-        try:
-            from google import genai
-            from google.genai import types
+    for model_name in candidate_models:
+        for attempt in range(1, max_retries + 1):
+            try:
+                from google import genai
+                from google.genai import types
 
-            client = genai.Client(api_key=api_key)
-            response = client.models.generate_content(
-                model=model_name,
-                contents=user_content,
-                config=types.GenerateContentConfig(
-                    system_instruction=SCREENING_SYSTEM_PROMPT,
-                    response_mime_type="application/json",
-                    response_schema=ScreeningOutputSchema,
-                    temperature=0.1,
-                ),
-            )
+                client = genai.Client(api_key=api_key)
+                response = client.models.generate_content(
+                    model=model_name,
+                    contents=user_content,
+                    config=types.GenerateContentConfig(
+                        system_instruction=SCREENING_SYSTEM_PROMPT,
+                        response_mime_type="application/json",
+                        response_schema=ScreeningOutputSchema,
+                        temperature=0.1,
+                    ),
+                )
 
-            raw_text = response.text or ""
-            data = json.loads(raw_text)
+                raw_text = response.text or ""
+                data = json.loads(raw_text)
 
-            # Validate schema
-            validated = ScreeningOutputSchema(**data)
-            return validated.model_dump()
+                # Validate schema
+                validated = ScreeningOutputSchema(**data)
+                return validated.model_dump()
 
-        except Exception as e:
-            last_error = e
-            logger.warning(
-                f"Gemini screening attempt {attempt}/{max_retries} failed: {e}. "
-                f"{'Retrying...' if attempt < max_retries else 'All retries exhausted.'}"
-            )
+            except Exception as e:
+                last_error = e
+                logger.warning(
+                    f"Gemini screening attempt {attempt}/{max_retries} with {model_name} failed: {e}. "
+                )
+                err_str = str(e).lower()
+                if "429" in err_str or "resource_exhausted" in err_str or "not_found" in err_str or "503" in err_str:
+                    logger.info(f"Model {model_name} rate-limited or unavailable; trying next candidate model...")
+                    break
 
     logger.error(f"Gemini screening failed after {max_retries} retries ({last_error}). Triggering required fallback result.")
     # Per constraint:

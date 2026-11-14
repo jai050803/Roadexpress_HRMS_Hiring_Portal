@@ -43,7 +43,7 @@ class Settings(BaseSettings):
 
     # AI Screening
     GEMINI_API_KEY: Optional[str] = None
-    GEMINI_MODEL: str = "gemini-3.5-flash"
+    GEMINI_MODEL: str = "gemini-3.5-flash-lite"
 
     # Google Calendar
     GOOGLE_SERVICE_ACCOUNT_JSON: Optional[str] = None
@@ -99,7 +99,7 @@ class Settings(BaseSettings):
     @property
     def clean_gemini_model(self) -> str:
         if not self.GEMINI_MODEL:
-            return "gemini-3.5-flash"
+            return "gemini-3.5-flash-lite"
         return self.GEMINI_MODEL.strip().strip('"').strip("'")
 
 

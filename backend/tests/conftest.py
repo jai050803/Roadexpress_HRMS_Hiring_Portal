@@ -37,6 +37,8 @@ from app.models.notification import Notification
 from app.models.resume import Resume
 from app.models.screening_result import ScreeningResult
 from app.models.status_history import ApplicationStatusHistory
+from app.models.interview import Interview
+from app.models.interview_feedback import InterviewFeedback
 from app.services.auth import auth_service
 
 # Use NullPool to avoid cross-loop connection sharing issues in async tests
@@ -89,10 +91,11 @@ async def clean_tables():
     """Clean all table data before each test for deterministic isolation."""
     async with test_engine.begin() as conn:
         for tbl in [
+            "interview_feedback",
+            "interviews",
             "notifications",
             "application_status_history",
             "screening_results",
-            "interviews",
             "resumes",
             "applications",
             "candidates",

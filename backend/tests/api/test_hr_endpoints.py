@@ -116,6 +116,16 @@ async def test_hr_login_and_me(client: AsyncClient, hr_user: HRUser):
     assert me_res.status_code == 200
     assert me_res.json()["email"] == hr_user.email
 
+    # 4. Authenticated hr-users list
+    users_res = await client.get(
+        "/v1/auth/hr-users",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert users_res.status_code == 200
+    users_list = users_res.json()
+    assert isinstance(users_list, list)
+    assert any(u["id"] == str(hr_user.id) and u["name"] == hr_user.name for u in users_list)
+
 
 @pytest.mark.asyncio
 async def test_hr_manual_cv_upload(

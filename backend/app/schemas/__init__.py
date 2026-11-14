@@ -20,6 +20,19 @@ from app.schemas.applications import (
 )
 from app.schemas.resumes import PresignedUrlResponse
 from app.schemas.cv_bank import CVBankItem, CVBankListResponse
+from app.schemas.interviews import (
+    InterviewCreate,
+    InterviewReschedule,
+    InterviewCancel,
+    InterviewFeedbackCreate,
+    InterviewFeedbackResponse,
+    InterviewResponse,
+    InterviewScheduleRequest,
+    InterviewRescheduleRequest,
+    InterviewCancelRequest,
+    InterviewFeedbackCreateRequest,
+    InterviewFilterParams,
+)
 
 __all__ = [
     "LoginRequest",
@@ -43,4 +56,15 @@ __all__ = [
     "PresignedUrlResponse",
     "CVBankItem",
     "CVBankListResponse",
+    "InterviewCreate",
+    "InterviewReschedule",
+    "InterviewCancel",
+    "InterviewFeedbackCreate",
+    "InterviewFeedbackResponse",
+    "InterviewResponse",
+    "InterviewScheduleRequest",
+    "InterviewRescheduleRequest",
+    "InterviewCancelRequest",
+    "InterviewFeedbackCreateRequest",
+    "InterviewFilterParams",
 ]

@@ -79,6 +79,18 @@ class StatusHistoryItem(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 
 
+class UpcomingInterviewInfo(BaseModel):
+    id: uuid.UUID
+    scheduled_at: datetime
+    duration_minutes: int = 60
+    mode: str
+    status: str = "scheduled"
+    meeting_link: Optional[str] = None
+    location: Optional[str] = None
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 # Full application detail for HR
 class ApplicationDetailResponse(BaseModel):
     id: uuid.UUID
@@ -97,6 +109,7 @@ class ApplicationDetailResponse(BaseModel):
     resume: Optional[ResumeInfo] = None
     screening_result: Optional[ScreeningResultInfo] = None
     status_history: List[StatusHistoryItem] = []
+    upcoming_interview: Optional[UpcomingInterviewInfo] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -123,6 +136,7 @@ class ApplicationListItemResponse(BaseModel):
     matched_skills: Optional[List[str]] = None
     missing_skills: Optional[List[str]] = None
     resume_file_name: Optional[str] = None
+    upcoming_interview: Optional[UpcomingInterviewInfo] = None
 
     model_config = ConfigDict(from_attributes=True)
 

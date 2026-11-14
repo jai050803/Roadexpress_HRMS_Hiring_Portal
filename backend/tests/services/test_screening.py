@@ -146,7 +146,14 @@ async def test_screening_success_and_status_transition(test_role):
         await session.commit()
         app_id = app.id
 
-    result = await ScreeningService.screen_application(app_id)
+    mock_llm_response = {
+        "score": 85,
+        "matched_skills": ["python", "fastapi"],
+        "missing_skills": [],
+        "llm_rationale": "Strong candidate matching all technical requirements.",
+    }
+    with patch("app.services.screening.service.call_gemini_screening", return_value=mock_llm_response):
+        result = await ScreeningService.screen_application(app_id)
 
     assert result is not None
     assert 0 <= result.score <= 100

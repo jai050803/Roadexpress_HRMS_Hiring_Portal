@@ -1,10 +1,12 @@
+from typing import List
 from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.auth import extract_bearer_token, require_hr_user
 from app.models.hr_user import HRUser
-from app.schemas.auth import HRUserProfileResponse, LoginRequest, TokenResponse
+from app.schemas.auth import HRUserProfileResponse, HRUserSimpleResponse, LoginRequest, TokenResponse
 from app.services.auth import auth_service
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -71,3 +73,19 @@ async def get_me(
 ):
     """Return the currently authenticated HR user profile."""
     return current_user
+
+
+@router.get(
+    "/hr-users",
+    response_model=List[HRUserSimpleResponse],
+    status_code=status.HTTP_200_OK,
+    summary="List active HR users for interviewer assignment",
+)
+async def list_hr_users(
+    db: AsyncSession = Depends(get_db),
+    current_user: HRUser = Depends(require_hr_user),
+):
+    """Return list of {id, name} for all active HR users."""
+    stmt = select(HRUser).where(HRUser.is_active.is_(True)).order_by(HRUser.name.asc())
+    result = await db.execute(stmt)
+    return result.scalars().all()

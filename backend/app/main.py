@@ -11,6 +11,7 @@ from app.routers.jobs import router as jobs_router
 from app.routers.applications import router as applications_router
 from app.routers.resumes import router as resumes_router
 from app.routers.cv_bank import router as cv_bank_router
+from app.routers.interviews import router as interviews_router
 
 
 @asynccontextmanager
@@ -108,3 +109,5 @@ app.include_router(resumes_router)
 app.include_router(resumes_router, prefix="/v1")
 app.include_router(cv_bank_router)
 app.include_router(cv_bank_router, prefix="/v1")
+app.include_router(interviews_router)
+app.include_router(interviews_router, prefix="/v1", tags=["interviews"])

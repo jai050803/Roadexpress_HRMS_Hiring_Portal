@@ -1,4 +1,5 @@
 import uuid
+from unittest.mock import patch
 import pytest
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -61,7 +62,14 @@ async def test_system_triggered_state_transition_no_fk_violation(test_role):
         app_id = app.id
 
     # Run AI screening service
-    result = await ScreeningService.screen_application(app_id)
+    mock_llm_response = {
+        "score": 80,
+        "matched_skills": ["python", "fastapi"],
+        "missing_skills": [],
+        "llm_rationale": "Automated screening evaluated successfully.",
+    }
+    with patch("app.services.screening.service.call_gemini_screening", return_value=mock_llm_response):
+        result = await ScreeningService.screen_application(app_id)
     assert result is not None
 
     # Inspect status history entries

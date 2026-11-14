@@ -16,8 +16,11 @@ import StatusBadge from "@/components/StatusBadge";
 import {
   bulkReject,
   bulkShortlist,
+  completeInterview,
   getJob,
   listApplications,
+  makeOffer,
+  markInterviewNoShow,
   rejectApplication,
   screenApplication,
   shortlistApplication,
@@ -84,6 +87,7 @@ export default function RolePipelinePage() {
     ALL: allCandidates.length,
     SCREENED: allCandidates.filter((c) => c.current_status === "SCREENED" || c.current_status === "APPLIED").length,
     SHORTLISTED: allCandidates.filter((c) => c.current_status === "SHORTLISTED").length,
+    INTERVIEWING: allCandidates.filter((c) => c.current_status === "INTERVIEW_SCHEDULED" || c.current_status === "INTERVIEWED" || (c.current_status as any) === "INTERVIEW_COMPLETED").length,
     REJECTED: allCandidates.filter((c) => c.current_status === "REJECTED").length,
   };
 
@@ -95,6 +99,8 @@ export default function RolePipelinePage() {
       filtered = filtered.filter((c) => c.current_status === "SCREENED" || c.current_status === "APPLIED");
     } else if (activeTab === "SHORTLISTED") {
       filtered = filtered.filter((c) => c.current_status === "SHORTLISTED");
+    } else if (activeTab === "INTERVIEWING") {
+      filtered = filtered.filter((c) => c.current_status === "INTERVIEW_SCHEDULED" || c.current_status === "INTERVIEWED" || (c.current_status as any) === "INTERVIEW_COMPLETED");
     } else if (activeTab === "REJECTED") {
       filtered = filtered.filter((c) => c.current_status === "REJECTED");
     }
@@ -165,10 +171,38 @@ export default function RolePipelinePage() {
     }
   };
 
+  const handleCompleteInterview = async (applicationId: string, interviewId: string) => {
+    try {
+      await completeInterview(interviewId);
+      await loadPipeline();
+    } catch (err: any) {
+      alert(err.message || "Failed to mark interview as completed");
+    }
+  };
+
+  const handleNoShowInterview = async (applicationId: string, interviewId: string) => {
+    try {
+      await markInterviewNoShow(interviewId);
+      await loadPipeline();
+    } catch (err: any) {
+      alert(err.message || "Failed to mark interview as no show");
+    }
+  };
+
+  const handleMakeOffer = async (applicationId: string) => {
+    try {
+      await makeOffer(applicationId);
+      await loadPipeline();
+    } catch (err: any) {
+      alert(err.message || "Failed to extend offer");
+    }
+  };
+
   const stageTabs = [
     { id: "ALL", label: "All candidates", count: counts.ALL },
     { id: "SCREENED", label: "Needs review", count: counts.SCREENED },
     { id: "SHORTLISTED", label: "Shortlisted", count: counts.SHORTLISTED },
+    { id: "INTERVIEWING", label: "Interviewing", count: counts.INTERVIEWING },
     { id: "REJECTED", label: "Rejected", count: counts.REJECTED },
   ];
 
@@ -343,6 +377,9 @@ export default function RolePipelinePage() {
           onReject={handleReject}
           onBulkShortlist={handleBulkShortlist}
           onBulkReject={handleBulkReject}
+          onCompleteInterview={handleCompleteInterview}
+          onNoShowInterview={handleNoShowInterview}
+          onMakeOffer={handleMakeOffer}
           isLoading={loading}
         />
       </main>

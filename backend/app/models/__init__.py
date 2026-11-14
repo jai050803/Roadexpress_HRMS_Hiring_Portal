@@ -7,6 +7,7 @@ from app.models.resume import Resume
 from app.models.screening_result import ScreeningResult
 from app.models.status_history import ApplicationStatusHistory
 from app.models.interview import Interview
+from app.models.interview_feedback import InterviewFeedback
 from app.models.notification import Notification
 
 __all__ = [
@@ -20,5 +21,6 @@ __all__ = [
     "ScreeningResult",
     "ApplicationStatusHistory",
     "Interview",
+    "InterviewFeedback",
     "Notification",
 ]

@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import {
+  CalendarClock,
   Check,
   Eye,
   Mail,
@@ -21,6 +22,9 @@ interface CandidateTableProps {
   onReject: (id: string, reason: RejectionReason, remarks: string) => Promise<void>;
   onBulkShortlist: (ids: string[]) => Promise<void>;
   onBulkReject: (ids: string[], reason: RejectionReason, remarks: string) => Promise<void>;
+  onCompleteInterview?: (applicationId: string, interviewId: string) => Promise<void>;
+  onNoShowInterview?: (applicationId: string, interviewId: string) => Promise<void>;
+  onMakeOffer?: (applicationId: string) => Promise<void>;
   isLoading?: boolean;
 }
 
@@ -30,6 +34,9 @@ export default function CandidateTable({
   onReject,
   onBulkShortlist,
   onBulkReject,
+  onCompleteInterview,
+  onNoShowInterview,
+  onMakeOffer,
   isLoading = false,
 }: CandidateTableProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -113,6 +120,37 @@ export default function CandidateTable({
       });
     } catch {
       return isoString;
+    }
+  };
+
+  const formatInterviewDetails = (interview?: {
+    scheduled_at: string;
+    duration_minutes: number;
+    mode: string;
+  } | null) => {
+    if (!interview?.scheduled_at) return null;
+    try {
+      const d = new Date(interview.scheduled_at);
+      const dateStr = d.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      });
+      const timeStr = d.toLocaleTimeString("en-US", {
+        hour: "numeric",
+        minute: "2-digit",
+        hour12: true,
+      });
+      const durStr = `${interview.duration_minutes || 60} min`;
+      const modeLabel =
+        interview.mode === "in_person"
+          ? "In Person"
+          : interview.mode === "phone"
+          ? "Phone"
+          : "Video";
+      return `${dateStr} · ${timeStr} · ${durStr} · ${modeLabel}`;
+    } catch {
+      return null;
     }
   };
 
@@ -228,6 +266,12 @@ export default function CandidateTable({
                     {/* Stage Status */}
                     <td className="py-3 px-3.5 whitespace-nowrap">
                       <StatusBadge status={c.current_status} type="application" />
+                      {c.current_status === "INTERVIEW_SCHEDULED" && c.upcoming_interview && (
+                        <div className="flex items-center gap-1.5 text-[11px] text-slate-500 mt-1 font-medium">
+                          <CalendarClock className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                          <span>{formatInterviewDetails(c.upcoming_interview)}</span>
+                        </div>
+                      )}
                     </td>
 
                     {/* Applied Date */}
@@ -238,26 +282,76 @@ export default function CandidateTable({
                     {/* Quick Row Actions */}
                     <td className="py-3 px-3.5 text-right whitespace-nowrap">
                       <div className="inline-flex items-center gap-1.5 justify-end">
-                        {!isTerminal && c.current_status !== "SHORTLISTED" && (
-                          <button
-                            type="button"
-                            onClick={() => onShortlist(c.id, c.current_status)}
-                            className="px-2 py-1 text-[11px] font-medium rounded-md bg-white border border-slate-200 text-slate-700 hover:text-brand-600 hover:border-brand-300 transition"
-                            title="Shortlist for interview"
-                          >
-                            Shortlist
-                          </button>
-                        )}
+                        {c.current_status === "INTERVIEW_SCHEDULED" ? (
+                          <>
+                            {c.upcoming_interview?.id && onCompleteInterview && (
+                              <button
+                                type="button"
+                                onClick={() => onCompleteInterview(c.id, c.upcoming_interview!.id)}
+                                className="px-2 py-1 text-[11px] font-medium rounded-md bg-white border border-slate-200 text-slate-700 hover:text-brand-600 hover:border-brand-300 transition"
+                                title="Mark interview completed"
+                              >
+                                Mark Done
+                              </button>
+                            )}
+                            {c.upcoming_interview?.id && onNoShowInterview && (
+                              <button
+                                type="button"
+                                onClick={() => onNoShowInterview(c.id, c.upcoming_interview!.id)}
+                                className="px-2 py-1 text-[11px] font-medium rounded-md text-slate-500 hover:text-stone-800 hover:bg-slate-100 transition"
+                                title="Mark candidate as no show"
+                              >
+                                No Show
+                              </button>
+                            )}
+                          </>
+                        ) : c.current_status === "INTERVIEWED" ? (
+                          <>
+                            {onMakeOffer && (
+                              <button
+                                type="button"
+                                onClick={() => onMakeOffer(c.id)}
+                                className="px-2 py-1 text-[11px] font-medium rounded-md bg-brand-500 text-white hover:bg-brand-600 transition shadow-2xs"
+                                title="Extend offer to candidate"
+                              >
+                                Make Offer
+                              </button>
+                            )}
+                            {!isTerminal && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSingleReject(c.id, c.candidate_name)}
+                                className="px-2 py-1 text-[11px] font-medium rounded-md text-slate-500 hover:text-stone-800 hover:bg-slate-100 transition"
+                                title="Reject candidate"
+                              >
+                                Reject
+                              </button>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            {!isTerminal && c.current_status !== "SHORTLISTED" && (
+                              <button
+                                type="button"
+                                onClick={() => onShortlist(c.id, c.current_status)}
+                                className="px-2 py-1 text-[11px] font-medium rounded-md bg-white border border-slate-200 text-slate-700 hover:text-brand-600 hover:border-brand-300 transition"
+                                title="Shortlist for interview"
+                              >
+                                Shortlist
+                              </button>
+                            )}
 
-                        {!isTerminal && (
-                          <button
-                            type="button"
-                            onClick={() => handleOpenSingleReject(c.id, c.candidate_name)}
-                            className="px-2 py-1 text-[11px] font-medium rounded-md text-slate-500 hover:text-stone-800 hover:bg-slate-100 transition"
-                            title="Reject candidate"
-                          >
-                            Reject
-                          </button>
+                            {!isTerminal && (
+                              <button
+                                type="button"
+                                onClick={() => handleOpenSingleReject(c.id, c.candidate_name)}
+                                className="px-2 py-1 text-[11px] font-medium rounded-md text-slate-500 hover:text-stone-800 hover:bg-slate-100 transition"
+                                title="Reject candidate"
+                              >
+                                Reject
+                              </button>
+                            )}
+                          </>
                         )}
 
                         <Link

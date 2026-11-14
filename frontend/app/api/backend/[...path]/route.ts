@@ -7,7 +7,8 @@ const BACKEND_URL =
 
 async function proxyRequest(request: NextRequest, { params }: { params: { path: string[] } }) {
   const token = request.cookies.get("hrms_token")?.value;
-  const path = (params.path || []).join("/");
+  const rawPath = (params.path || []).join("/");
+  const path = rawPath.startsWith("v1/") ? rawPath.slice(3) : rawPath;
   const search = request.nextUrl.search;
   const targetUrl = `${BACKEND_URL}/${path}${search}`;
 

@@ -11,6 +11,7 @@ if TYPE_CHECKING:
     from app.models.job_role import JobRole
     from app.models.status_history import ApplicationStatusHistory
     from app.models.interview import Interview
+    from app.models.interview_feedback import InterviewFeedback
 
 
 class HRUser(Base):
@@ -41,4 +42,8 @@ class HRUser(Base):
     created_interviews: Mapped[List["Interview"]] = relationship(
         "Interview",
         back_populates="created_by_user",
+    )
+    submitted_feedback: Mapped[List["InterviewFeedback"]] = relationship(
+        "InterviewFeedback",
+        back_populates="submitted_by_user",
     )

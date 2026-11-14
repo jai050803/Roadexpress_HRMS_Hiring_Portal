@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   Briefcase,
+  Calendar,
   FileUp,
   LayoutDashboard,
   LogOut,
@@ -35,6 +36,7 @@ export default function TopNav({ onOpenCommand }: TopNavProps) {
   const modules = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Postings & Pipeline", href: "/jobs", icon: Briefcase },
+    { label: "Interviews", href: "/interviews", icon: Calendar },
     { label: "CV Bank", href: "/cv-bank", icon: Users },
     { label: "Upload Emailed CV", href: "/upload-cv", icon: FileUp },
   ];

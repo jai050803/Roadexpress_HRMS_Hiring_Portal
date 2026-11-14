@@ -24,3 +24,11 @@ class HRUserProfileResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+
+class HRUserSimpleResponse(BaseModel):
+    id: uuid.UUID
+    name: str
+
+    class Config:
+        from_attributes = True

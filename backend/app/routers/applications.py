@@ -300,6 +300,33 @@ async def reject_application(
 
 
 @router.post(
+    "/{id}/offer",
+    response_model=ApplicationDetailResponse,
+    summary="Extend offer to candidate (HR only)",
+)
+async def extend_offer(
+    id: uuid.UUID,
+    payload: Optional[OfferActionRequest] = Body(default=None),
+    current_user: HRUser = Depends(require_hr_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Transitions application to OFFERED (from INTERVIEWED).
+    Logs transition in application_status_history with changed_by_type='hr'.
+    Dispatches candidate offer notification.
+    """
+    remarks = payload.remarks if payload else None
+    status_version = payload.status_version if payload else None
+    return await ApplicationService.make_offer(
+        db=db,
+        application_id=id,
+        hr_user_id=current_user.id,
+        remarks=remarks,
+        status_version=status_version,
+    )
+
+
+@router.post(
     "/{id}/accept-offer",
     response_model=ApplicationDetailResponse,
     summary="Record candidate offer acceptance (HR only)",
@@ -381,3 +408,19 @@ async def lapse_offer(
         remarks=remarks,
         status_version=status_version,
     )
+
+
+@router.get(
+    "/{id}/interviews",
+    summary="Get all interviews for an application (HR only)",
+)
+async def get_application_interviews_via_app_router(
+    id: uuid.UUID,
+    current_user: HRUser = Depends(require_hr_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Returns all interviews and feedback rounds for a specific candidate application.
+    """
+    from app.services.interviews.service import InterviewService
+    return await InterviewService.get_application_interviews(db, application_id=id)

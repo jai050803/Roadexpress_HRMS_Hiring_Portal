@@ -111,7 +111,7 @@ class Application(Base):
         "Interview",
         back_populates="application",
         cascade="all, delete-orphan",
-        order_by="Interview.round_number",
+        order_by="Interview.scheduled_at",
     )
     notifications: Mapped[List["Notification"]] = relationship(
         "Notification",

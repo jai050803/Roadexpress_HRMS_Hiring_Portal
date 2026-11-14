@@ -75,10 +75,11 @@ export default function StatusBadge({
         label = "Shortlisted";
         break;
       case "interview_scheduled":
+      case "interviewed":
       case "interview_completed":
         styleClasses = "bg-indigo-50/80 text-indigo-800 border-indigo-200";
         dotColor = "bg-indigo-500";
-        label = norm === "interview_scheduled" ? "Interview set" : "Interviewed";
+        label = norm === "interview_scheduled" ? "Interview Scheduled" : "Interviewed";
         break;
       case "offered":
       case "offer_extended":

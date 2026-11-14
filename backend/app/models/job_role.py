@@ -20,6 +20,7 @@ except ImportError:
 if TYPE_CHECKING:
     from app.models.hr_user import HRUser
     from app.models.application import Application
+    from app.models.interview import Interview
 
 
 class JobRole(Base):
@@ -70,6 +71,7 @@ class JobRole(Base):
     # Relationships
     created_by_user: Mapped[Optional["HRUser"]] = relationship("HRUser", back_populates="job_roles")
     applications: Mapped[List["Application"]] = relationship("Application", back_populates="job_role")
+    interviews: Mapped[List["Interview"]] = relationship("Interview", back_populates="job_role")
 
     __table_args__ = (
         Index("idx_job_roles_status", "status"),

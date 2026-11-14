@@ -24,6 +24,7 @@ from app.schemas.applications import (
     ResumeInfo,
     ScreeningResultInfo,
     StatusHistoryItem,
+    UpcomingInterviewInfo,
 )
 from app.services.auth.service import get_redis_client
 from app.services.candidates.service import CandidateService
@@ -441,6 +442,25 @@ class ApplicationService:
             status_stage=meta["stage"],
         )
 
+    @staticmethod
+    def _extract_upcoming_interview(interviews: Any) -> Optional[UpcomingInterviewInfo]:
+        if not interviews:
+            return None
+        scheduled = [it for it in interviews if getattr(it, "status", None) == "scheduled"]
+        if scheduled:
+            target = min(scheduled, key=lambda x: x.scheduled_at)
+        else:
+            target = max(interviews, key=lambda x: x.scheduled_at)
+        return UpcomingInterviewInfo(
+            id=target.id,
+            scheduled_at=target.scheduled_at,
+            duration_minutes=target.duration_minutes,
+            mode=target.mode,
+            status=target.status,
+            meeting_link=target.meeting_link,
+            location=target.location,
+        )
+
     @classmethod
     async def get_application(
         cls,
@@ -458,6 +478,7 @@ class ApplicationService:
                 joinedload(Application.resume),
                 joinedload(Application.screening_result),
                 selectinload(Application.status_history),
+                selectinload(Application.interviews),
             )
             .where(Application.id == application_id)
         )
@@ -541,6 +562,7 @@ class ApplicationService:
             resume=resume_info,
             screening_result=screening_info,
             status_history=history_items,
+            upcoming_interview=cls._extract_upcoming_interview(app.interviews),
         )
 
     @classmethod
@@ -566,6 +588,7 @@ class ApplicationService:
                 joinedload(Application.job_role),
                 joinedload(Application.resume),
                 joinedload(Application.screening_result),
+                selectinload(Application.interviews),
             )
         )
 
@@ -629,6 +652,7 @@ class ApplicationService:
                     matched_skills=app.screening_result.matched_skills if app.screening_result else None,
                     missing_skills=app.screening_result.missing_skills if app.screening_result else None,
                     resume_file_name=app.resume.file_name if app.resume else None,
+                    upcoming_interview=cls._extract_upcoming_interview(app.interviews),
                 )
             )
 
@@ -795,6 +819,55 @@ class ApplicationService:
         # Asynchronously trigger rejection notification (generic message to candidate)
         try:
             send_notification_task.delay(str(application_id), "rejected", custom_message=custom_message)
+        except Exception:
+            pass
+
+        return await cls.get_application(db, application_id)
+
+    @classmethod
+    async def make_offer(
+        cls,
+        db: AsyncSession,
+        application_id: uuid.UUID,
+        hr_user_id: uuid.UUID,
+        remarks: Optional[str] = None,
+        status_version: Optional[int] = None,
+    ) -> ApplicationDetailResponse:
+        """
+        Transition application to OFFERED (from INTERVIEWED).
+        Writes to application_status_history with changed_by_type='hr'.
+        """
+        stmt = (
+            select(Application)
+            .options(
+                joinedload(Application.candidate),
+                joinedload(Application.job_role),
+            )
+            .where(Application.id == application_id)
+        )
+        res = await db.execute(stmt)
+        application = res.scalar_one_or_none()
+        if not application:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail={"error": "not_found", "message": "Application not found."},
+            )
+
+        await cls._transition_status(
+            db=db,
+            application=application,
+            to_status="OFFERED",
+            reason=None,
+            remarks=remarks or "Offer extended by HR",
+            changed_by=hr_user_id,
+            changed_by_type="hr",
+            expected_version=status_version,
+        )
+
+        await db.commit()
+
+        try:
+            send_notification_task.delay(str(application_id), "offer_extended")
         except Exception:
             pass
 
