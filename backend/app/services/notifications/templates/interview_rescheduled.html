@@ -3,69 +3,140 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Updated time: {{ job_title }} interview</title>
+  <title>Updated Schedule: {{ job_title }} Interview</title>
 </head>
-<body style="margin: 0; padding: 24px 16px; background-color: #ffffff; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; color: #1a1a1a;">
-  <div style="max-width: 560px; margin: 0 auto; padding: 0;">
-    <div style="font-size: 15px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px; letter-spacing: -0.2px;">
-      Road Express
-    </div>
+<body style="margin: 0; padding: 32px 16px; background-color: #f3f4f6; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; color: #1f2937;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 600px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; text-align: left;" border="0" cellspacing="0" cellpadding="0">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding: 28px 36px 20px 36px; border-bottom: 2px solid #F4511E;">
+              <div style="font-size: 18px; font-weight: 700; color: #111827; letter-spacing: -0.3px;">
+                Road Express
+              </div>
+              <div style="font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600; letter-spacing: 0.8px; margin-top: 2px;">
+                Talent Acquisition & Recruiting
+              </div>
+            </td>
+          </tr>
 
-    <h1 style="font-size: 20px; font-weight: bold; color: #1a1a1a; margin: 0 0 16px 0; line-height: 1.3;">
-      Updated time: {{ job_title }} interview
-    </h1>
+          <!-- Body -->
+          <tr>
+            <td style="padding: 32px 36px 36px 36px;">
+              <h1 style="font-size: 21px; font-weight: 700; color: #111827; margin: 0 0 16px 0; line-height: 1.3;">
+                Updated Schedule: {{ job_title }} Interview
+              </h1>
 
-    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
-      Hi {{ candidate_name }},
-    </p>
+              <p style="font-size: 15px; line-height: 1.6; color: #374151; margin: 0 0 16px 0;">
+                Dear {{ candidate_name }},
+              </p>
 
-    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
-      Your interview for the <strong>{{ job_title }}</strong> position has been rescheduled. Here is your updated schedule:
-    </p>
+              <p style="font-size: 15px; line-height: 1.6; color: #374151; margin: 0 0 16px 0;">
+                Please note that your scheduled interview for the <strong>{{ job_title }}</strong> role (Ref: {{ reference_number }}) has been adjusted to a new date and time. We apologize for any scheduling inconvenience this change may cause.
+              </p>
 
-    <div style="margin: 20px 0; font-size: 15px; line-height: 1.7; color: #1a1a1a;">
-      <div><strong>New date:</strong> {{ interview_date }}</div>
-      <div><strong>New time:</strong> {{ interview_time }}</div>
-      <div><strong>Duration:</strong> {{ interview_duration }}</div>
-      <div><strong>Format:</strong> {{ interview_mode_label }}</div>
-      {% if interview_mode == 'video' and meeting_link %}
-      <div style="margin-top: 4px;"><strong>Meeting link:</strong> <a href="{{ meeting_link }}" style="color: #d94819; text-decoration: underline;">{{ meeting_link }}</a></div>
-      {% elif interview_mode == 'in_person' and location %}
-      <div style="margin-top: 4px;"><strong>Location:</strong> {{ location }}</div>
-      {% elif interview_mode == 'phone' %}
-      <div style="margin-top: 4px;"><strong>Phone:</strong> We'll call you at {{ candidate_phone or "the phone number on your application" }}.</div>
-      {% endif %}
-    </div>
+              <p style="font-size: 15px; line-height: 1.6; color: #374151; margin: 0 0 20px 0;">
+                Here are your confirmed new interview details:
+              </p>
 
-    {% if custom_message %}
-    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 16px 0;">
-      {{ custom_message }}
-    </p>
-    {% endif %}
+              <!-- Updated Schedule Box -->
+              <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-left: 4px solid #F4511E; border-radius: 4px; padding: 20px; margin: 20px 0;">
+                <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #111827; margin-bottom: 14px;">
+                  Updated Interview Schedule
+                </div>
 
-    {% if interview_mode == 'video' and meeting_link %}
-    <div style="margin: 24px 0;">
-      <a href="{{ meeting_link }}" style="display: inline-block; background-color: #d94819; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; padding: 11px 20px; border-radius: 4px;">
-        Open video meeting
-      </a>
-    </div>
-    {% else %}
-    <div style="margin: 24px 0;">
-      <a href="{{ tracking_url }}" style="display: inline-block; background-color: #d94819; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; padding: 11px 20px; border-radius: 4px;">
-        View updated details
-      </a>
-    </div>
-    {% endif %}
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 14px; line-height: 1.6;">
+                  <tr>
+                    <td style="padding: 4px 0; color: #6b7280; width: 140px; font-weight: 500;">Role:</td>
+                    <td style="padding: 4px 0; color: #111827; font-weight: 600;">{{ job_title }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; color: #6b7280; font-weight: 500;">New Date:</td>
+                    <td style="padding: 4px 0; color: #111827; font-weight: 600;">{{ interview_date }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; color: #6b7280; font-weight: 500;">New Time:</td>
+                    <td style="padding: 4px 0; color: #111827; font-weight: 600;">{{ interview_time }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; color: #6b7280; font-weight: 500;">Duration:</td>
+                    <td style="padding: 4px 0; color: #111827;">{{ interview_duration }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; color: #6b7280; font-weight: 500;">Format:</td>
+                    <td style="padding: 4px 0; color: #111827; font-weight: 600;">{{ interview_mode_label }}</td>
+                  </tr>
+                  {% if interview_mode == 'video' and meeting_link %}
+                  <tr>
+                    <td style="padding: 6px 0 4px 0; color: #6b7280; font-weight: 500; vertical-align: top;">Meeting Link:</td>
+                    <td style="padding: 6px 0 4px 0; color: #F4511E; font-weight: 600; word-break: break-all;">
+                      <a href="{{ meeting_link }}" style="color: #F4511E; text-decoration: underline;">{{ meeting_link }}</a>
+                    </td>
+                  </tr>
+                  {% elif interview_mode == 'in_person' and location %}
+                  <tr>
+                    <td style="padding: 4px 0; color: #6b7280; font-weight: 500; vertical-align: top;">Location:</td>
+                    <td style="padding: 4px 0; color: #111827; font-weight: 600;">{{ location }}</td>
+                  </tr>
+                  {% elif interview_mode == 'phone' %}
+                  <tr>
+                    <td style="padding: 4px 0; color: #6b7280; font-weight: 500;">Phone:</td>
+                    <td style="padding: 4px 0; color: #111827;">We will call you at {{ candidate_phone or "the phone number on your application" }}</td>
+                  </tr>
+                  {% endif %}
+                </table>
+              </div>
 
-    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 28px 0 0 0;">
-      Thanks,<br>
-      Road Express Recruiting
-    </p>
+              {% if custom_message %}
+              <div style="margin: 20px 0; padding: 14px 18px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 14px; line-height: 1.5; color: #374151;">
+                <strong style="color: #111827;">Note from HR:</strong> {{ custom_message }}
+              </div>
+              {% endif %}
 
-    <div style="margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #737373; line-height: 1.4;">
-      <p style="margin: 0 0 4px 0;">Road Express Freight Logistics</p>
-      <p style="margin: 0;">If this new time doesn't work for you, reply directly to this email.</p>
-    </div>
-  </div>
+              <!-- Action Button -->
+              <div style="margin: 28px 0 24px 0;">
+                {% if interview_mode == 'video' and meeting_link %}
+                <a href="{{ meeting_link }}" style="display: inline-block; background-color: #F4511E; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 4px;">
+                  Join Video Meeting
+                </a>
+                {% else %}
+                <a href="{{ tracking_url }}" style="display: inline-block; background-color: #F4511E; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 12px 24px; border-radius: 4px;">
+                  View Updated Details
+                </a>
+                {% endif %}
+              </div>
+
+              <p style="font-size: 14px; line-height: 1.5; color: #6b7280; margin: 20px 0 0 0;">
+                <strong>Does this new timing work for you?</strong> If this time conflicts with your schedule, please reply directly to this email with 2 to 3 alternate time slots that suit your availability, and we will happily re-coordinate.
+              </p>
+
+              <!-- Sign-off -->
+              <p style="font-size: 15px; line-height: 1.6; color: #1f2937; margin: 28px 0 0 0;">
+                Sincerely,<br>
+                <strong>Road Express Talent Acquisition Team</strong><br>
+                <span style="font-size: 13px; color: #6b7280;">Road Express Freight & Logistics</span>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 36px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 6px 6px;">
+              <p style="margin: 0 0 4px 0; font-size: 12px; color: #6b7280; font-weight: 500;">
+                Road Express Freight & Logistics Ltd. &middot; Recruitment Center
+              </p>
+              <p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.4;">
+                Reference ID: {{ reference_number }} &middot; If you need assistance, reply directly to this message.
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>

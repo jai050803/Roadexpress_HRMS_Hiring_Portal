@@ -3,47 +3,105 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Your application for {{ job_title }}</title>
+  <title>Application Status: {{ job_title }}</title>
 </head>
-<body style="margin: 0; padding: 24px 16px; background-color: #ffffff; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; color: #1a1a1a;">
-  <div style="max-width: 560px; margin: 0 auto; padding: 0;">
-    <div style="font-size: 15px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px; letter-spacing: -0.2px;">
-      Road Express
-    </div>
+<body style="margin: 0; padding: 32px 16px; background-color: #f3f4f6; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; color: #1f2937;">
+  <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" style="max-width: 600px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 6px; text-align: left;" border="0" cellspacing="0" cellpadding="0">
+          
+          <!-- Header -->
+          <tr>
+            <td style="padding: 28px 36px 20px 36px; border-bottom: 2px solid #F4511E;">
+              <div style="font-size: 18px; font-weight: 700; color: #111827; letter-spacing: -0.3px;">
+                Road Express
+              </div>
+              <div style="font-size: 11px; text-transform: uppercase; color: #6b7280; font-weight: 600; letter-spacing: 0.8px; margin-top: 2px;">
+                Talent Acquisition & Recruiting
+              </div>
+            </td>
+          </tr>
 
-    <h1 style="font-size: 20px; font-weight: bold; color: #1a1a1a; margin: 0 0 16px 0; line-height: 1.3;">
-      Your application for {{ job_title }}
-    </h1>
+          <!-- Body -->
+          <tr>
+            <td style="padding: 32px 36px 36px 36px;">
+              <h1 style="font-size: 21px; font-weight: 700; color: #111827; margin: 0 0 16px 0; line-height: 1.3;">
+                Application Status: {{ job_title }}
+              </h1>
 
-    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
-      Hi {{ candidate_name }},
-    </p>
+              <p style="font-size: 15px; line-height: 1.6; color: #374151; margin: 0 0 16px 0;">
+                Dear {{ candidate_name }},
+              </p>
 
-    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
-      Thank you for applying for the <strong>{{ job_title }}</strong> role at Road Express.
-    </p>
+              <p style="font-size: 15px; line-height: 1.6; color: #374151; margin: 0 0 16px 0;">
+                Thank you for taking the time to apply for the <strong>{{ job_title }}</strong> opening at Road Express, and for sharing your background and credentials with our team.
+              </p>
 
-    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
-      We've reviewed your background alongside our applicant pool. While your qualifications are strong, we've decided to move forward with candidates whose experience aligns closer with our immediate operational requirements for this opening.
-    </p>
+              <p style="font-size: 15px; line-height: 1.6; color: #374151; margin: 0 0 20px 0;">
+                Our hiring team conducted a thorough evaluation of all applications received for this requisition. While your professional experience and qualifications are commendable, we have decided to advance other candidates whose specific skillsets and immediate operational experience align more closely with the current demands of this role.
+              </p>
 
-    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
-      We keep resumes on file in our talent pool, so if a role opens up in the future that fits your background, we'll reach back out.
-    </p>
+              <!-- Application Details Box -->
+              <div style="background-color: #f9fafb; border: 1px solid #e5e7eb; border-left: 4px solid #6b7280; border-radius: 4px; padding: 20px; margin: 20px 0;">
+                <div style="font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #111827; margin-bottom: 12px;">
+                  Requisition Information
+                </div>
 
-    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
-      We appreciate your time and interest in Road Express, and wish you the best in your job search.
-    </p>
+                <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="font-size: 14px; line-height: 1.6;">
+                  <tr>
+                    <td style="padding: 4px 0; color: #6b7280; width: 140px; font-weight: 500;">Role:</td>
+                    <td style="padding: 4px 0; color: #111827; font-weight: 600;">{{ job_title }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; color: #6b7280; font-weight: 500;">Department:</td>
+                    <td style="padding: 4px 0; color: #111827;">{{ department }}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 4px 0; color: #6b7280; font-weight: 500;">Reference ID:</td>
+                    <td style="padding: 4px 0; color: #111827; font-family: monospace;">{{ reference_number }}</td>
+                  </tr>
+                </table>
+              </div>
 
-    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 28px 0 0 0;">
-      Thanks,<br>
-      Road Express Recruiting
-    </p>
+              {% if custom_message %}
+              <div style="margin: 20px 0; padding: 14px 18px; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 4px; font-size: 14px; line-height: 1.5; color: #374151;">
+                <strong style="color: #111827;">Note from Recruiting:</strong> {{ custom_message }}
+              </div>
+              {% endif %}
 
-    <div style="margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #737373; line-height: 1.4;">
-      <p style="margin: 0 0 4px 0;">Road Express Freight Logistics</p>
-      <p style="margin: 0;">If you have any questions, reply directly to this email.</p>
-    </div>
-  </div>
+              <p style="font-size: 15px; line-height: 1.6; color: #374151; margin: 0 0 16px 0;">
+                We genuinely appreciate the effort and preparation you invested in your application. Because our business and network continue to expand, we will keep your resume on file within our talent network and will reach out if a future opening matches your profile.
+              </p>
+
+              <p style="font-size: 15px; line-height: 1.6; color: #374151; margin: 0 0 24px 0;">
+                We wish you every success in your ongoing career endeavors.
+              </p>
+
+              <!-- Sign-off -->
+              <p style="font-size: 15px; line-height: 1.6; color: #1f2937; margin: 28px 0 0 0;">
+                Sincerely,<br>
+                <strong>Road Express Talent Acquisition Team</strong><br>
+                <span style="font-size: 13px; color: #6b7280;">Road Express Freight & Logistics</span>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 36px; background-color: #f9fafb; border-top: 1px solid #e5e7eb; border-radius: 0 0 6px 6px;">
+              <p style="margin: 0 0 4px 0; font-size: 12px; color: #6b7280; font-weight: 500;">
+                Road Express Freight & Logistics Ltd. &middot; Recruitment Center
+              </p>
+              <p style="margin: 0; font-size: 12px; color: #9ca3af; line-height: 1.4;">
+                Reference ID: {{ reference_number }} &middot; Confidential Recruitment Notice
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
 </body>
 </html>

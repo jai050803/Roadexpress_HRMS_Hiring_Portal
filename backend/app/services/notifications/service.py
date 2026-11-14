@@ -116,6 +116,15 @@ class NotificationService:
                 job_title = application.job_role.title
                 department = application.job_role.department
                 ref_number = application.reference_number
+                applied_date = (
+                    application.applied_at.strftime("%A, %d %B %Y")
+                    if application.applied_at
+                    else ""
+                )
+                job_location = application.job_role.location or ""
+                work_mode = (application.job_role.work_mode or "").title()
+                employment_type = (application.job_role.employment_type or "").replace("_", " ").title()
+
                 portal_url = settings.CANDIDATE_PORTAL_URL or "http://localhost:3000"
                 tracking_url = f"{portal_url}/track?email={candidate_email}&reference_number={ref_number}"
 
@@ -175,6 +184,10 @@ class NotificationService:
                     "job_title": job_title,
                     "department": department,
                     "reference_number": ref_number,
+                    "applied_date": applied_date,
+                    "job_location": job_location,
+                    "work_mode": work_mode,
+                    "employment_type": employment_type,
                     "tracking_url": tracking_url,
                     "portal_url": portal_url,
                     "hr_portal_url": "http://localhost:3001",
