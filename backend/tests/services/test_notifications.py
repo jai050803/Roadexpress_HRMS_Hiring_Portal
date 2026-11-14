@@ -167,4 +167,49 @@ async def test_notification_provider_status_default_pending(sample_application: 
         assert notif.provider_status == "pending"
 
 
+@pytest.mark.asyncio
+async def test_interview_notification_contains_timings_and_links(sample_application: Application):
+    """Verify that interview invite and reschedule emails contain formatted timings, duration, and meeting link."""
+    from datetime import datetime, timezone, timedelta
+    from app.models.interview import Interview
+    from app.services.notifications.email_client import EmailClient
+
+    test_time = datetime.now(timezone.utc) + timedelta(days=2)
+    meeting_url = "https://meet.google.com/xyz-road-exp"
+
+    async with TestSessionLocal() as session:
+        interview = Interview(
+            application_id=sample_application.id,
+            job_role_id=sample_application.job_role_id,
+            scheduled_at=test_time,
+            duration_minutes=45,
+            mode="video",
+            meeting_link=meeting_url,
+            status="scheduled",
+        )
+        session.add(interview)
+        await session.commit()
+
+    with patch.object(EmailClient, "send_email", return_value=True) as mock_send:
+        res = await NotificationService.send_notification(
+            application_id=sample_application.id,
+            notification_type="interview_invite",
+        )
+        assert res is True
+        assert mock_send.call_count == 1
+        _, kwargs = mock_send.call_args
+        html = kwargs["html_content"]
+
+        # Timings, duration, and link are present
+        assert "45 minutes" in html
+        assert "Video meeting" in html
+        assert meeting_url in html
+        assert "Interview details:" in kwargs["subject"]
+        # Human styling checks (no gradients, no pastel card class, no SVG icon libraries)
+        assert "linear-gradient" not in html
+        assert "border-radius: 8px" not in html
+        assert "font-family: Arial, Helvetica, sans-serif" in html
+
+
+
 

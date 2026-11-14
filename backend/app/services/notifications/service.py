@@ -23,14 +23,14 @@ jinja_env = Environment(
 )
 
 SUBJECT_MAPPING = {
-    "applied_ack": "Application Received: {job_title} | Road Express ({reference_number})",
-    "shortlisted": "Update: You have been shortlisted for {job_title} | Road Express",
-    "rejected": "Road Express Application Update: {job_title}",
+    "applied_ack": "Application Received: {job_title} | Road Express",
+    "shortlisted": "Next steps: your application for {job_title}",
+    "rejected": "Your application for {job_title} at Road Express",
     "parse_failed_hr_alert": "HR Alert: Resume Parsing Failed for {job_title} | {candidate_name}",
     "offer_accepted_hr_alert": "HR Alert: Offer Accepted for {job_title} | {candidate_name}",
-    "interview_invite": "Interview Scheduled — {job_title} at Road Express Freight",
-    "interview_rescheduled": "Interview Rescheduled — {job_title} at Road Express Freight",
-    "interview_cancelled": "Interview Update — {job_title} at Road Express Freight",
+    "interview_invite": "Interview details: {job_title} at Road Express",
+    "interview_rescheduled": "Updated time: your {job_title} interview",
+    "interview_cancelled": "Interview cancelled: {job_title} at Road Express",
 }
 
 
@@ -54,14 +54,28 @@ class NotificationService:
             notification_id = None
             try:
                 # 1. Idempotent Insert using DB constraint
-                insert_stmt = text(
-                    """
-                    INSERT INTO notifications (id, application_id, type, channel, status, provider_status, created_at)
-                    VALUES (gen_random_uuid(), :application_id, :type, 'email', 'pending', 'pending', now())
-                    ON CONFLICT (application_id, type) DO NOTHING
-                    RETURNING id;
-                    """
-                )
+                # For reschedules or cancellations, permit re-dispatching with updated details
+                if notification_type in ("interview_rescheduled", "interview_cancelled"):
+                    insert_stmt = text(
+                        """
+                        INSERT INTO notifications (id, application_id, type, channel, status, provider_status, created_at)
+                        VALUES (gen_random_uuid(), :application_id, :type, 'email', 'pending', 'pending', now())
+                        ON CONFLICT (application_id, type) DO UPDATE SET
+                            status = 'pending',
+                            provider_status = 'pending',
+                            created_at = now()
+                        RETURNING id;
+                        """
+                    )
+                else:
+                    insert_stmt = text(
+                        """
+                        INSERT INTO notifications (id, application_id, type, channel, status, provider_status, created_at)
+                        VALUES (gen_random_uuid(), :application_id, :type, 'email', 'pending', 'pending', now())
+                        ON CONFLICT (application_id, type) DO NOTHING
+                        RETURNING id;
+                        """
+                    )
                 res = await db.execute(
                     insert_stmt,
                     {"application_id": application_id, "type": notification_type},
@@ -98,11 +112,50 @@ class NotificationService:
 
                 candidate_email = application.candidate.email
                 candidate_name = application.candidate.name
+                candidate_phone = application.candidate.phone or ""
                 job_title = application.job_role.title
                 department = application.job_role.department
                 ref_number = application.reference_number
                 portal_url = settings.CANDIDATE_PORTAL_URL or "http://localhost:3000"
                 tracking_url = f"{portal_url}/track?email={candidate_email}&reference_number={ref_number}"
+
+                # Query latest interview details if notification is interview-related
+                interview_date = ""
+                interview_time = ""
+                interview_duration = "60 minutes"
+                interview_mode = ""
+                interview_mode_label = ""
+                meeting_link = ""
+                location = ""
+                cancellation_reason = ""
+
+                if notification_type.startswith("interview_"):
+                    from app.models.interview import Interview
+                    int_stmt = (
+                        select(Interview)
+                        .where(Interview.application_id == application_id)
+                        .order_by(Interview.created_at.desc(), Interview.scheduled_at.desc())
+                        .limit(1)
+                    )
+                    int_res = await db.execute(int_stmt)
+                    latest_interview = int_res.scalar_one_or_none()
+                    if latest_interview:
+                        if latest_interview.scheduled_at:
+                            dt = latest_interview.scheduled_at
+                            interview_date = dt.strftime("%A, %d %B %Y")
+                            interview_time = dt.strftime("%I:%M %p UTC").lstrip("0")
+                        if latest_interview.duration_minutes:
+                            interview_duration = f"{latest_interview.duration_minutes} minutes"
+                        interview_mode = latest_interview.mode or ""
+                        mode_labels = {
+                            "phone": "Phone call",
+                            "video": "Video meeting",
+                            "in_person": "In-person meeting",
+                        }
+                        interview_mode_label = mode_labels.get(interview_mode, interview_mode.title())
+                        meeting_link = latest_interview.meeting_link or ""
+                        location = latest_interview.location or ""
+                        cancellation_reason = latest_interview.cancellation_reason or ""
 
                 # 3. Render Template
                 template_file = f"{notification_type}.html"
@@ -117,6 +170,7 @@ class NotificationService:
                 template_vars = {
                     "candidate_name": candidate_name,
                     "candidate_email": candidate_email,
+                    "candidate_phone": candidate_phone,
                     "candidate_id": str(application.candidate.id),
                     "job_title": job_title,
                     "department": department,
@@ -125,6 +179,14 @@ class NotificationService:
                     "portal_url": portal_url,
                     "hr_portal_url": "http://localhost:3001",
                     "custom_message": custom_message,
+                    "interview_date": interview_date,
+                    "interview_time": interview_time,
+                    "interview_duration": interview_duration,
+                    "interview_mode": interview_mode,
+                    "interview_mode_label": interview_mode_label,
+                    "meeting_link": meeting_link,
+                    "location": location,
+                    "cancellation_reason": cancellation_reason,
                 }
                 html_body = template.render(**template_vars)
 

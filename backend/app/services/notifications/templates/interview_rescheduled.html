@@ -3,41 +3,69 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Interview Rescheduled - Road Express</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; color: #1e293b; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-    .header { background: #d97706; padding: 24px; text-align: center; }
-    .header h1 { color: #ffffff; margin: 0; font-size: 20px; font-weight: 600; }
-    .content { padding: 32px 24px; line-height: 1.6; }
-    .greeting { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
-    .banner { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 14px; color: #92400e; font-weight: 500; }
-    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin: 20px 0; }
-    .card-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-    .card-label { color: #64748b; font-weight: 500; }
-    .card-val { color: #0f172a; font-weight: 600; }
-    .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-  </style>
+  <title>Updated time: {{ job_title }} interview</title>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Road Express HRMS</h1>
+<body style="margin: 0; padding: 24px 16px; background-color: #ffffff; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; color: #1a1a1a;">
+  <div style="max-width: 560px; margin: 0 auto; padding: 0;">
+    <div style="font-size: 15px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px; letter-spacing: -0.2px;">
+      Road Express
     </div>
-    <div class="content">
-      <div class="greeting">Dear {{ candidate_name }},</div>
-      <div class="banner">
-        Your interview schedule has been updated.
-      </div>
-      <p>Please note the updated details for your upcoming interview for the position below:</p>
-      <div class="card">
-        <div class="card-row"><span class="card-label">Position:</span><span class="card-val">{{ job_title }}</span></div>
-        <div class="card-row"><span class="card-label">Department:</span><span class="card-val">{{ department }}</span></div>
-        <div class="card-row"><span class="card-label">Reference:</span><span class="card-val">{{ reference_number }}</span></div>
-      </div>
-      <p>{{ custom_message or "Please check your candidate portal for the new time and link." }}</p>
+
+    <h1 style="font-size: 20px; font-weight: bold; color: #1a1a1a; margin: 0 0 16px 0; line-height: 1.3;">
+      Updated time: {{ job_title }} interview
+    </h1>
+
+    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
+      Hi {{ candidate_name }},
+    </p>
+
+    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
+      Your interview for the <strong>{{ job_title }}</strong> position has been rescheduled. Here is your updated schedule:
+    </p>
+
+    <div style="margin: 20px 0; font-size: 15px; line-height: 1.7; color: #1a1a1a;">
+      <div><strong>New date:</strong> {{ interview_date }}</div>
+      <div><strong>New time:</strong> {{ interview_time }}</div>
+      <div><strong>Duration:</strong> {{ interview_duration }}</div>
+      <div><strong>Format:</strong> {{ interview_mode_label }}</div>
+      {% if interview_mode == 'video' and meeting_link %}
+      <div style="margin-top: 4px;"><strong>Meeting link:</strong> <a href="{{ meeting_link }}" style="color: #d94819; text-decoration: underline;">{{ meeting_link }}</a></div>
+      {% elif interview_mode == 'in_person' and location %}
+      <div style="margin-top: 4px;"><strong>Location:</strong> {{ location }}</div>
+      {% elif interview_mode == 'phone' %}
+      <div style="margin-top: 4px;"><strong>Phone:</strong> We'll call you at {{ candidate_phone or "the phone number on your application" }}.</div>
+      {% endif %}
     </div>
-    <div class="footer">&copy; Road Express Freight. All rights reserved.</div>
+
+    {% if custom_message %}
+    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 16px 0;">
+      {{ custom_message }}
+    </p>
+    {% endif %}
+
+    {% if interview_mode == 'video' and meeting_link %}
+    <div style="margin: 24px 0;">
+      <a href="{{ meeting_link }}" style="display: inline-block; background-color: #d94819; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; padding: 11px 20px; border-radius: 4px;">
+        Open video meeting
+      </a>
+    </div>
+    {% else %}
+    <div style="margin: 24px 0;">
+      <a href="{{ tracking_url }}" style="display: inline-block; background-color: #d94819; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; padding: 11px 20px; border-radius: 4px;">
+        View updated details
+      </a>
+    </div>
+    {% endif %}
+
+    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 28px 0 0 0;">
+      Thanks,<br>
+      Road Express Recruiting
+    </p>
+
+    <div style="margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #737373; line-height: 1.4;">
+      <p style="margin: 0 0 4px 0;">Road Express Freight Logistics</p>
+      <p style="margin: 0;">If this new time doesn't work for you, reply directly to this email.</p>
+    </div>
   </div>
 </body>
 </html>

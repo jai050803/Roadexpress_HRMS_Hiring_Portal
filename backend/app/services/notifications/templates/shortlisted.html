@@ -3,64 +3,44 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Application Shortlisted - Road Express</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; color: #1e293b; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-    .header { background: #047857; padding: 24px; text-align: center; }
-    .header h1 { color: #ffffff; margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
-    .content { padding: 32px 24px; line-height: 1.6; }
-    .greeting { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
-    .banner { background: #ecfdf5; border-left: 4px solid #10b981; padding: 12px 16px; border-radius: 4px; margin: 16px 0; font-size: 14px; color: #065f46; font-weight: 500; }
-    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin: 20px 0; }
-    .card-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-    .card-label { color: #64748b; font-weight: 500; }
-    .card-val { color: #0f172a; font-weight: 600; }
-    .ref-badge { display: inline-block; background: #d1fae5; color: #065f46; padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 14px; font-weight: 700; }
-    .btn { display: inline-block; background: #059669; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; margin-top: 16px; text-align: center; }
-    .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-  </style>
+  <title>Next steps for your application</title>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Road Express HRMS</h1>
+<body style="margin: 0; padding: 24px 16px; background-color: #ffffff; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; color: #1a1a1a;">
+  <div style="max-width: 560px; margin: 0 auto; padding: 0;">
+    <div style="font-size: 15px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px; letter-spacing: -0.2px;">
+      Road Express
     </div>
-    <div class="content">
-      <div class="greeting">Congratulations {{ candidate_name }}!</div>
-      
-      <div class="banner">
-        We are pleased to inform you that your application has been shortlisted.
-      </div>
 
-      <p>Following our initial screening, your qualifications and background stood out to our hiring team for the position below:</p>
-      
-      <div class="card">
-        <div class="card-row">
-          <span class="card-label">Position:</span>
-          <span class="card-val">{{ job_title }}</span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Department:</span>
-          <span class="card-val">{{ department }}</span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Reference Number:</span>
-          <span class="card-val"><span class="ref-badge">{{ reference_number }}</span></span>
-        </div>
-      </div>
+    <h1 style="font-size: 20px; font-weight: bold; color: #1a1a1a; margin: 0 0 16px 0; line-height: 1.3;">
+      Next steps: {{ job_title }} application
+    </h1>
 
-      <p><strong>Next Steps:</strong> Your interview timing and date will be confirmed soon by our recruitment team. Please keep an eye on your email for the schedule and discussion topics.</p>
+    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
+      Hi {{ candidate_name }},
+    </p>
 
-      <div style="text-align: center; margin: 24px 0;">
-        <a href="{{ tracking_url }}" class="btn">View Application Pipeline</a>
-      </div>
+    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
+      Thanks for your patience while we reviewed applications. We went through your background and want to move forward with your candidacy for the <strong>{{ job_title }}</strong> position.
+    </p>
 
-      <p>Best regards,<br><strong>Talent Acquisition Team</strong><br>Road Express</p>
+    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
+      Our team is coordinating interview slots now and will send you a calendar invite with the date and time shortly. There's nothing you need to do on your end right now.
+    </p>
+
+    <div style="margin: 24px 0;">
+      <a href="{{ tracking_url }}" style="display: inline-block; background-color: #d94819; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; padding: 11px 20px; border-radius: 4px;">
+        View application details
+      </a>
     </div>
-    <div class="footer">
-      &copy; 2026 Road Express. All rights reserved.<br>
-      This is an automated notification. Please do not reply directly to this email.
+
+    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 28px 0 0 0;">
+      Thanks,<br>
+      Road Express Recruiting
+    </p>
+
+    <div style="margin-top: 36px; padding-top: 16px; border-top: 1px solid #e5e5e5; font-size: 12px; color: #737373; line-height: 1.4;">
+      <p style="margin: 0 0 4px 0;">Road Express Freight Logistics</p>
+      <p style="margin: 0;">If you have any questions, reply directly to this email.</p>
     </div>
   </div>
 </body>

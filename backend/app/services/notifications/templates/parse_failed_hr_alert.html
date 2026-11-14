@@ -3,75 +3,43 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HR Alert: Resume Parsing Failed - Road Express</title>
-  <style>
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #f4f6f8; margin: 0; padding: 20px; color: #1e293b; }
-    .container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05); }
-    .header { background: #991b1b; padding: 24px; text-align: center; }
-    .header h1 { color: #ffffff; margin: 0; font-size: 20px; font-weight: 600; letter-spacing: 0.5px; }
-    .content { padding: 32px 24px; line-height: 1.6; }
-    .alert-badge { display: inline-block; background: #fee2e2; color: #991b1b; font-weight: 700; font-size: 12px; padding: 4px 10px; border-radius: 4px; text-transform: uppercase; margin-bottom: 12px; }
-    .greeting { font-size: 18px; font-weight: 600; margin-bottom: 16px; }
-    .card { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 16px; margin: 20px 0; }
-    .card-row { display: flex; justify-content: space-between; margin-bottom: 8px; font-size: 14px; }
-    .card-label { color: #64748b; font-weight: 500; }
-    .card-val { color: #0f172a; font-weight: 600; }
-    .ref-badge { display: inline-block; background: #e0e7ff; color: #3730a3; padding: 4px 10px; border-radius: 4px; font-family: monospace; font-size: 14px; font-weight: 700; }
-    .error-box { background: #fff1f2; border: 1px solid #fecdd3; border-radius: 6px; padding: 14px; margin: 16px 0; font-family: monospace; font-size: 13px; color: #9f1239; word-break: break-word; }
-    .btn { display: inline-block; background: #0f172a; color: #ffffff !important; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: 600; margin-top: 16px; text-align: center; }
-    .footer { background: #f8fafc; padding: 20px; text-align: center; font-size: 12px; color: #64748b; border-top: 1px solid #e2e8f0; }
-  </style>
+  <title>HR Alert: Resume parsing issue</title>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1>Road Express HRMS — HR Alert</h1>
+<body style="margin: 0; padding: 24px 16px; background-color: #ffffff; font-family: Arial, Helvetica, sans-serif; -webkit-font-smoothing: antialiased; color: #1a1a1a;">
+  <div style="max-width: 560px; margin: 0 auto; padding: 0;">
+    <div style="font-size: 15px; font-weight: bold; color: #1a1a1a; margin-bottom: 24px; letter-spacing: -0.2px;">
+      Road Express HRMS
     </div>
-    <div class="content">
-      <div class="alert-badge">Action Required</div>
-      <div class="greeting">Resume Parsing Failure Notification</div>
-      <p>The automated resume parsing worker encountered an issue processing a candidate's uploaded resume. The application has been preserved in the system, but requires manual HR review or re-parsing.</p>
-      
-      <div class="card">
-        <div class="card-row">
-          <span class="card-label">Candidate Name:</span>
-          <span class="card-val">{{ candidate_name }}</span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Candidate Email:</span>
-          <span class="card-val">{{ candidate_email }}</span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Target Role:</span>
-          <span class="card-val">{{ job_title }}</span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Department:</span>
-          <span class="card-val">{{ department }}</span>
-        </div>
-        <div class="card-row">
-          <span class="card-label">Reference Number:</span>
-          <span class="card-val"><span class="ref-badge">{{ reference_number }}</span></span>
-        </div>
-      </div>
 
-      {% if custom_message %}
-      <p><strong>Error Details:</strong></p>
-      <div class="error-box">{{ custom_message }}</div>
-      {% endif %}
+    <h1 style="font-size: 20px; font-weight: bold; color: #1a1a1a; margin: 0 0 16px 0; line-height: 1.3;">
+      HR Alert: Resume parsing issue
+    </h1>
 
-      <p>Please log in to the HR Portal to inspect the raw PDF document or manually update candidate information.</p>
+    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 0 0 16px 0;">
+      The automated parser ran into an issue extracting data from a candidate resume. The application has been preserved in the system and is ready for manual review.
+    </p>
 
-      <div style="text-align: center; margin: 24px 0;">
-        <a href="{{ hr_portal_url }}/candidates/{{ candidate_id }}" class="btn">View Candidate in HR Portal</a>
-      </div>
-
-      <p>Best regards,<br><strong>System Automation</strong><br>Road Express HRMS</p>
+    <div style="margin: 20px 0; font-size: 15px; line-height: 1.7; color: #1a1a1a;">
+      <div><strong>Candidate:</strong> {{ candidate_name }} ({{ candidate_email }})</div>
+      <div><strong>Role:</strong> {{ job_title }} ({{ department }})</div>
+      <div><strong>Reference:</strong> {{ reference_number }}</div>
     </div>
-    <div class="footer">
-      &copy; 2026 Road Express. All rights reserved.<br>
-      This is an automated operational alert sent to the HR operations team.
+
+    {% if custom_message %}
+    <p style="font-size: 14px; line-height: 1.5; color: #555555; margin: 16px 0; font-family: monospace;">
+      {{ custom_message }}
+    </p>
+    {% endif %}
+
+    <div style="margin: 24px 0;">
+      <a href="{{ hr_portal_url }}/candidates/{{ candidate_id }}" style="display: inline-block; background-color: #d94819; color: #ffffff; text-decoration: none; font-size: 14px; font-weight: bold; padding: 11px 20px; border-radius: 4px;">
+        Open candidate dossier
+      </a>
     </div>
+
+    <p style="font-size: 15px; line-height: 1.5; color: #1a1a1a; margin: 28px 0 0 0;">
+      Road Express System Notification
+    </p>
   </div>
 </body>
 </html>
