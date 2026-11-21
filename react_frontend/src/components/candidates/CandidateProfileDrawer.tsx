@@ -5,6 +5,7 @@ import {
   Briefcase,
   Calendar,
   Check,
+  CheckCircle,
   Clock,
   Download,
   ExternalLink,

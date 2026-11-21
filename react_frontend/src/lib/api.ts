@@ -3,6 +3,7 @@ import {
   ApplicationDetail,
   ApplicationListResponse,
   BulkActionResponse,
+  CandidateInfo,
   CVBankListResponse,
   HRUser,
   HRUserSimple,

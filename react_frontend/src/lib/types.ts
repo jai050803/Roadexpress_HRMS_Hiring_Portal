@@ -8,6 +8,77 @@ export interface HRUser {
   created_at: string;
 }
 
+export interface HRUserSimple {
+  id: string;
+  name: string;
+  email: string;
+  role?: string;
+}
+
+export type RejectionReason =
+  | "insufficient_experience"
+  | "role_filled"
+  | "overqualified"
+  | "no_response"
+  | "other"
+  | string;
+
+export interface BulkActionResponse {
+  success: boolean;
+  count?: number;
+  message?: string;
+  updated_ids?: string[];
+  failed_ids?: string[];
+}
+
+export interface InterviewCreatePayload {
+  application_id: string;
+  round_number?: number;
+  round_name?: string;
+  scheduled_at: string;
+  duration_minutes?: number;
+  mode: "video" | "phone" | "in_person" | string;
+  location?: string;
+  meeting_link?: string;
+  interviewer_id?: string;
+  interviewer_ids?: string[];
+  interviewer_name?: string;
+  interviewer_email?: string;
+  hr_notes?: string;
+  notes?: string;
+}
+
+export interface InterviewReschedulePayload {
+  scheduled_at: string;
+  duration_minutes?: number;
+  meeting_link?: string;
+  reason?: string;
+}
+
+export interface InterviewFeedbackCreatePayload {
+  technical_score: number;
+  communication_score: number;
+  cultural_fit_score?: number;
+  culture_fit_score?: number;
+  problem_solving_score?: number;
+  recommendation: "hire" | "hold" | "reject" | string;
+  feedback_notes?: string;
+  notes?: string;
+  strengths?: string[];
+  areas_for_improvement?: string[];
+}
+
+export interface InterviewFeedbackItem {
+  id: string;
+  interview_id: string;
+  technical_score: number;
+  communication_score: number;
+  cultural_fit_score: number;
+  recommendation: string;
+  feedback_notes?: string;
+  created_at: string;
+}
+
 export type JobStatus = "draft" | "published" | "closed";
 export type WorkMode = "remote" | "onsite" | "hybrid";
 export type EmploymentType = "full_time" | "part_time" | "contract" | "internship";
@@ -170,6 +241,10 @@ export interface ApplicationDetail {
   id: string;
   reference_number: string;
   candidate: CandidateInfo;
+  candidate_id?: string;
+  candidate_name?: string;
+  candidate_email?: string;
+  candidate_phone?: string;
   job_id?: string;
   job_role_id?: string;
   job_title: string;
@@ -179,8 +254,11 @@ export interface ApplicationDetail {
   source: ApplicationSource;
   current_status: ApplicationStatus;
   status: ApplicationStatus;
+  status_version?: number;
   match_score?: number;
   screening_score?: number;
+  matched_skills?: string[];
+  missing_skills?: string[];
   recruiter_notes?: string;
   rejection_reason?: string;
   resume?: ResumeInfo;
@@ -207,11 +285,13 @@ export interface ApplicationListItem {
   source: ApplicationSource;
   current_status: ApplicationStatus;
   status: ApplicationStatus;
+  status_version?: number;
   match_score?: number;
   screening_score?: number;
   hard_filter_passed?: boolean;
   matched_skills?: string[];
   missing_skills?: string[];
+  resume_id?: string;
   resume_file_name?: string;
   upcoming_interview?: UpcomingInterviewInfo | null;
 }
@@ -221,12 +301,14 @@ export interface ApplicationListResponse {
   total: number;
   page: number;
   limit: number;
-  total_pages: number;
+  total_pages?: number;
+  pages?: number;
 }
 
 export interface InterviewItem {
   id: string;
   application_id: string;
+  candidate_id?: string;
   job_role_id?: string;
   job_id?: string;
   round_number: number;
@@ -252,6 +334,7 @@ export interface InterviewItem {
 }
 
 export interface CVBankItem {
+  id?: string;
   application_id: string;
   reference_number: string;
   applied_at: string;
@@ -266,6 +349,7 @@ export interface CVBankItem {
   job_id?: string;
   job_title: string;
   department: string;
+  job_department?: string;
   screening_score?: number;
   match_score?: number;
   matched_skills?: string[];
@@ -281,5 +365,6 @@ export interface CVBankListResponse {
   total: number;
   page: number;
   limit: number;
-  total_pages: number;
+  total_pages?: number;
+  pages?: number;
 }

@@ -28,7 +28,7 @@ import StatusBadge from "../components/ui/StatusBadge";
 import CandidateProfileDrawer from "../components/candidates/CandidateProfileDrawer";
 import RejectionModal from "../components/common/RejectionModal";
 import ResumePreviewModal from "../components/resumes/ResumePreviewModal";
-import { useHandoff } from "../../integration/handoffIntegration";
+import { useHandoff } from "../integration/handoffIntegration";
 import {
   acceptOffer,
   completeInterview,
