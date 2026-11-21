@@ -19,6 +19,7 @@ eggs/
 lib/
 !frontend/lib/
 !user-frontend/lib/
+!react_frontend/src/lib/
 lib64/
 parts/
 sdist/
@@ -75,5 +76,7 @@ screenshots/
 
 # Offline explanation & meeting defense guides
 EXPLANATION_*.md
+EXPLANATION_FE_*.md
 MEETING_*.md
+
 

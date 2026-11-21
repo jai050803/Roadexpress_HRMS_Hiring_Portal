@@ -1,0 +1,15 @@
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.local
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+coverage/
+
+# Offline explanation & meeting defense guides (never commit to git)
+EXPLANATION_*.md
+EXPLANATION_FE_*.md
+MEETING_*.md
