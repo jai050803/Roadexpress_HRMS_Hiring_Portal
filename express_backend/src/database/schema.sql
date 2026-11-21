@@ -81,7 +81,10 @@ CREATE TABLE IF NOT EXISTS hiring_applications (
     job_id UUID NOT NULL REFERENCES hiring_jobs(id) ON DELETE CASCADE,
     candidate_id UUID NOT NULL REFERENCES hiring_candidates(id) ON DELETE CASCADE,
     resume_id UUID REFERENCES hiring_resumes(id) ON DELETE SET NULL,
+    reference_number VARCHAR(50) UNIQUE,
+    source VARCHAR(50) NOT NULL DEFAULT 'portal',
     status VARCHAR(50) NOT NULL DEFAULT 'APPLIED',
+    current_status VARCHAR(50) NOT NULL DEFAULT 'APPLIED',
     match_score NUMERIC(5, 2),
     recruiter_notes TEXT,
     rejection_reason TEXT,
@@ -93,12 +96,16 @@ CREATE TABLE IF NOT EXISTS hiring_applications (
 CREATE TABLE IF NOT EXISTS hiring_screening_results (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     application_id UUID NOT NULL REFERENCES hiring_applications(id) ON DELETE CASCADE,
-    overall_score NUMERIC(5, 2) NOT NULL,
-    summary TEXT,
+    score INTEGER NOT NULL DEFAULT 0,
+    overall_score NUMERIC(5, 2) NOT NULL DEFAULT 0,
+    matched_skills TEXT[],
+    missing_skills TEXT[],
     strengths TEXT[],
     weaknesses TEXT[],
-    missing_skills TEXT[],
+    llm_rationale TEXT,
+    summary TEXT,
     recommendations TEXT,
+    hard_filter_passed BOOLEAN NOT NULL DEFAULT true,
     raw_response JSONB,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -136,9 +143,13 @@ CREATE TABLE IF NOT EXISTS hiring_status_history (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     application_id UUID NOT NULL REFERENCES hiring_applications(id) ON DELETE CASCADE,
     old_status VARCHAR(50),
+    from_status VARCHAR(50),
     new_status VARCHAR(50) NOT NULL,
+    to_status VARCHAR(50),
     changed_by_id UUID REFERENCES hiring_users(id) ON DELETE SET NULL,
+    changed_by_type VARCHAR(20) NOT NULL DEFAULT 'hr',
     reason TEXT,
+    remarks TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 

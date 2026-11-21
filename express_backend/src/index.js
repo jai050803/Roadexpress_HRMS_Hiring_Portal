@@ -8,17 +8,23 @@ const UserRepository = require('./repositories/user.repository');
 const JobRepository = require('./repositories/job.repository');
 const CandidateRepository = require('./repositories/candidate.repository');
 const ResumeRepository = require('./repositories/resume.repository');
+const ApplicationRepository = require('./repositories/application.repository');
+const StatusHistoryRepository = require('./repositories/statusHistory.repository');
+const ScreeningRepository = require('./repositories/screening.repository');
 
 const AuthService = require('./services/auth.service');
 const JobService = require('./services/job.service');
 const CandidateService = require('./services/candidate.service');
 const ResumeParserService = require('./services/resumeParser.service');
 const ResumeService = require('./services/resume.service');
+const ScreeningService = require('./services/screening.service');
+const ApplicationService = require('./services/application.service');
 
 const AuthController = require('./controllers/auth.controller');
 const JobController = require('./controllers/job.controller');
 const CandidateController = require('./controllers/candidate.controller');
 const ResumeController = require('./controllers/resume.controller');
+const ApplicationController = require('./controllers/application.controller');
 
 const createHiringRouter = require('./routes');
 const { errorHandler } = require('./middleware/errorHandler.middleware');
@@ -54,6 +60,9 @@ function createHiringModule(options = {}) {
   const jobRepository = new JobRepository(pool);
   const candidateRepository = new CandidateRepository(pool);
   const resumeRepository = new ResumeRepository(pool);
+  const applicationRepository = new ApplicationRepository(pool);
+  const statusHistoryRepository = new StatusHistoryRepository(pool);
+  const screeningRepository = new ScreeningRepository(pool);
 
   const authService = new AuthService(
     { userRepository },
@@ -78,17 +87,40 @@ function createHiringModule(options = {}) {
     { resumeParserService }
   );
 
+  const screeningService = new ScreeningService(
+    { screeningRepository },
+    {}
+  );
+
+  const applicationService = new ApplicationService(
+    {
+      applicationRepository,
+      jobRepository,
+      candidateRepository,
+      statusHistoryRepository
+    },
+    { onboardingIntegration },
+    {
+      jobService,
+      candidateService,
+      resumeService,
+      screeningService
+    }
+  );
+
   const authController = new AuthController(authService);
   const jobController = new JobController(jobService);
   const candidateController = new CandidateController(candidateService);
   const resumeController = new ResumeController(resumeService);
+  const applicationController = new ApplicationController(applicationService);
 
   const hiringRouter = createHiringRouter({
     controllers: {
       authController,
       jobController,
       candidateController,
-      resumeController
+      resumeController,
+      applicationController
     },
     integrations: {
       authIntegration,
@@ -110,20 +142,26 @@ function createHiringModule(options = {}) {
       userRepository,
       jobRepository,
       candidateRepository,
-      resumeRepository
+      resumeRepository,
+      applicationRepository,
+      statusHistoryRepository,
+      screeningRepository
     },
     services: {
       authService,
       jobService,
       candidateService,
       resumeParserService,
-      resumeService
+      resumeService,
+      screeningService,
+      applicationService
     },
     controllers: {
       authController,
       jobController,
       candidateController,
-      resumeController
+      resumeController,
+      applicationController
     },
     errorHandler
   };
