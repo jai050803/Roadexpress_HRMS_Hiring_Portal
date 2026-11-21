@@ -11,4 +11,8 @@ export { default as Header } from './components/layout/Header';
 export { default as CommandPalette } from './components/layout/CommandPalette';
 export { default as RejectionModal } from './components/common/RejectionModal';
 export { default as Dashboard } from './pages/Dashboard';
+export { default as Jobs } from './pages/Jobs';
+export { default as JobDetail } from './pages/JobDetail';
+export { default as CreateJobModal } from './components/jobs/CreateJobModal';
+export { default as LinkedInCopyPanel } from './components/jobs/LinkedInCopyPanel';
 export * from './lib/types';

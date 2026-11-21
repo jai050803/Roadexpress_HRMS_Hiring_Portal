@@ -6,6 +6,9 @@ import { HandoffProvider, EmployeeDraftPayload } from './integration/handoffInte
 import { configureHttp } from './integration/httpIntegration';
 import { HRUser } from './lib/types';
 import Dashboard from './pages/Dashboard';
+import Jobs from './pages/Jobs';
+import CreateJobPage from './pages/CreateJob';
+import JobDetail from './pages/JobDetail';
 import AppShell from './components/layout/AppShell';
 import Header from './components/layout/Header';
 
@@ -52,14 +55,9 @@ export const HiringPortal: React.FC<HiringPortalProps> = ({
           <Routes>
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route
-              path="/jobs"
-              element={<PlaceholderPage title="Job Postings" subtitle="Job postings, department filters, and lifecycle management." />}
-            />
-            <Route
-              path="/jobs/new"
-              element={<PlaceholderPage title="Create Job Opening" subtitle="Draft role, define requirements, and preview AI-generated JD." />}
-            />
+            <Route path="/jobs" element={<Jobs />} />
+            <Route path="/jobs/new" element={<CreateJobPage />} />
+            <Route path="/jobs/:id" element={<JobDetail />} />
             <Route
               path="/pipeline"
               element={<PlaceholderPage title="Hiring Pipeline" subtitle="Visual candidate progression board." />}
