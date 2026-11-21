@@ -5,4 +5,10 @@ export { useLayoutIntegration, LayoutProvider } from './integration/layoutIntegr
 export { useHandoff, HandoffProvider } from './integration/handoffIntegration';
 export type { EmployeeDraftPayload } from './integration/handoffIntegration';
 export { http, configureHttp } from './integration/httpIntegration';
+export { default as AppShell } from './components/layout/AppShell';
+export { default as TopNav } from './components/layout/TopNav';
+export { default as Header } from './components/layout/Header';
+export { default as CommandPalette } from './components/layout/CommandPalette';
+export { default as RejectionModal } from './components/common/RejectionModal';
+export { default as Dashboard } from './pages/Dashboard';
 export * from './lib/types';

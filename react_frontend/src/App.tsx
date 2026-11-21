@@ -1,12 +1,13 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './integration/authIntegration';
-import { LayoutProvider, useLayoutIntegration } from './integration/layoutIntegration';
+import { AuthProvider } from './integration/authIntegration';
+import { LayoutProvider } from './integration/layoutIntegration';
 import { HandoffProvider, EmployeeDraftPayload } from './integration/handoffIntegration';
 import { configureHttp } from './integration/httpIntegration';
 import { HRUser } from './lib/types';
-import StatusBadge from './components/ui/StatusBadge';
-import ScoreIndicator from './components/ui/ScoreIndicator';
+import Dashboard from './pages/Dashboard';
+import AppShell from './components/layout/AppShell';
+import Header from './components/layout/Header';
 
 export interface HiringPortalProps {
   embedded?: boolean;
@@ -17,78 +18,17 @@ export interface HiringPortalProps {
   onCandidateHired?: (payload: EmployeeDraftPayload) => void;
 }
 
-const FoundationPreview: React.FC = () => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const { embedded } = useLayoutIntegration();
-
-  return (
-    <div className="min-h-screen bg-slate-50 p-8 font-sans">
-      <div className="max-w-4xl mx-auto space-y-6">
-        <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded bg-brand-500 text-white flex items-center justify-center font-bold text-xl">
-              RE
-            </div>
-            <div>
-              <h1 className="text-xl font-semibold text-slate-900">Road Express Hiring Portal (React Edition)</h1>
-              <p className="text-xs text-slate-500">
-                Mode: <span className="font-mono font-medium text-brand-600">{embedded ? 'Embedded in HRMS' : 'Standalone'}</span>
-              </p>
-            </div>
-          </div>
-          {isAuthenticated && (
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-slate-600">Logged in as: <strong>{user?.name || user?.email}</strong></span>
-              <button
-                onClick={logout}
-                className="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded transition"
-              >
-                Logout
-              </button>
-            </div>
-          )}
-        </div>
-
-        <div className="bg-white p-6 rounded-lg border border-slate-200 shadow-sm space-y-4">
-          <h2 className="text-sm font-semibold text-slate-800 uppercase tracking-wider">
-            Prompt 1 Deliverables: Design System & Integration Atoms
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="border border-slate-100 p-4 rounded bg-slate-50/50 space-y-2">
-              <span className="text-xs font-medium text-slate-500 block">Status Badges</span>
-              <div className="flex flex-wrap gap-2">
-                <StatusBadge status="published" type="job" />
-                <StatusBadge status="draft" type="job" />
-                <StatusBadge status="shortlisted" />
-                <StatusBadge status="interview_scheduled" />
-                <StatusBadge status="hired" />
-                <StatusBadge status="rejected" />
-              </div>
-            </div>
-
-            <div className="border border-slate-100 p-4 rounded bg-slate-50/50 space-y-2">
-              <span className="text-xs font-medium text-slate-500 block">AI Score Indicators</span>
-              <div className="flex items-center gap-6">
-                <div>
-                  <span className="text-[10px] text-slate-400 block mb-1">High (92)</span>
-                  <ScoreIndicator score={92} size="sm" />
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 block mb-1">Mid (68)</span>
-                  <ScoreIndicator score={68} size="sm" />
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400 block mb-1">Large Display</span>
-                  <ScoreIndicator score={88} size="lg" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+const PlaceholderPage: React.FC<{ title: string; subtitle: string }> = ({ title, subtitle }) => (
+  <AppShell>
+    <Header title={title} breadcrumbs={[{ label: "Overview", href: "/dashboard" }, { label: title }]} />
+    <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="bg-white rounded-lg border border-slate-200 p-8 text-center space-y-3 shadow-2xs">
+        <h2 className="text-base font-semibold text-slate-900">{title}</h2>
+        <p className="text-xs text-slate-500 max-w-md mx-auto">{subtitle}</p>
       </div>
-    </div>
-  );
-};
+    </main>
+  </AppShell>
+);
 
 export const HiringPortal: React.FC<HiringPortalProps> = ({
   embedded = false,
@@ -110,8 +50,41 @@ export const HiringPortal: React.FC<HiringPortalProps> = ({
       <LayoutProvider embedded={embedded}>
         <HandoffProvider onCandidateHired={onCandidateHired}>
           <Routes>
-            <Route path="/" element={<FoundationPreview />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route
+              path="/jobs"
+              element={<PlaceholderPage title="Job Postings" subtitle="Job postings, department filters, and lifecycle management." />}
+            />
+            <Route
+              path="/jobs/new"
+              element={<PlaceholderPage title="Create Job Opening" subtitle="Draft role, define requirements, and preview AI-generated JD." />}
+            />
+            <Route
+              path="/pipeline"
+              element={<PlaceholderPage title="Hiring Pipeline" subtitle="Visual candidate progression board." />}
+            />
+            <Route
+              path="/pipeline/:jobId"
+              element={<PlaceholderPage title="Job Pipeline" subtitle="Kanban pipeline for specific job opening." />}
+            />
+            <Route
+              path="/candidates/:id"
+              element={<PlaceholderPage title="Candidate Dossier" subtitle="Resume parsing, AI screening breakdown, and interview history." />}
+            />
+            <Route
+              path="/interviews"
+              element={<PlaceholderPage title="Interview Calendar" subtitle="Upcoming candidate interview scheduling and feedback scoring." />}
+            />
+            <Route
+              path="/cv-bank"
+              element={<PlaceholderPage title="CV Talent Bank" subtitle="Centralized candidate archive with skill search and CSV export." />}
+            />
+            <Route
+              path="/upload-cv"
+              element={<PlaceholderPage title="Upload Emailed CV" subtitle="Direct resume upload and automated parsing." />}
+            />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </HandoffProvider>
       </LayoutProvider>
