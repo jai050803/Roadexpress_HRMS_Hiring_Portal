@@ -49,7 +49,7 @@ export interface ApiError {
   details?: Record<string, any>;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/v1";
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/v1";
 
 export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const headers = new Headers(options.headers || {});
@@ -72,6 +72,10 @@ export async function fetchApi<T>(endpoint: string, options: RequestInit = {}): 
       details: data.details,
     };
     throw errorObj;
+  }
+
+  if (data && typeof data === "object" && "data" in data && "success" in data && data.data !== undefined) {
+    return data.data as T;
   }
 
   return data as T;
