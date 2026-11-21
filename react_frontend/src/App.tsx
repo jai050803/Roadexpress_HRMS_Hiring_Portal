@@ -13,6 +13,8 @@ import Candidates from './pages/Candidates';
 import CandidateDossier from './pages/CandidateDossier';
 import UploadResume from './pages/UploadResume';
 import Pipeline from './pages/Pipeline';
+import Interviews from './pages/Interviews';
+import CVBank from './pages/CVBank';
 import AppShell from './components/layout/AppShell';
 import Header from './components/layout/Header';
 
@@ -67,14 +69,8 @@ export const HiringPortal: React.FC<HiringPortalProps> = ({
             <Route path="/candidates" element={<Candidates />} />
             <Route path="/candidates/:id" element={<CandidateDossier />} />
             <Route path="/upload-cv" element={<UploadResume />} />
-            <Route
-              path="/interviews"
-              element={<PlaceholderPage title="Interview Calendar" subtitle="Upcoming candidate interview scheduling and feedback scoring." />}
-            />
-            <Route
-              path="/cv-bank"
-              element={<PlaceholderPage title="CV Talent Bank" subtitle="Centralized candidate archive with skill search and CSV export." />}
-            />
+            <Route path="/interviews" element={<Interviews />} />
+            <Route path="/cv-bank" element={<CVBank />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>
         </HandoffProvider>

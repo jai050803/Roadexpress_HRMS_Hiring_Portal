@@ -22,6 +22,7 @@ import ScoreIndicator from "../ui/ScoreIndicator";
 import StatusBadge from "../ui/StatusBadge";
 import StatusTimeline from "../ui/StatusTimeline";
 import RejectionModal from "../common/RejectionModal";
+import { useHandoff } from "../../integration/handoffIntegration";
 import {
   getApplication,
   getResumePresignedUrl,
@@ -50,6 +51,33 @@ export default function CandidateProfileDrawer({
   const [downloadLoading, setDownloadLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRejectModalOpen, setIsRejectModalOpen] = useState(false);
+  const { onCandidateHired } = useHandoff();
+  const [transferred, setTransferred] = useState(false);
+
+  const handleTransferToOnboarding = () => {
+    if (!application) return;
+    onCandidateHired({
+      candidateId: application.candidate?.id || application.id,
+      applicationId: application.id,
+      personalInfo: {
+        fullName: application.candidate?.name || application.candidate_name,
+        email: application.candidate?.email || application.candidate_email,
+        phone: application.candidate?.phone || application.candidate_phone,
+        location: application.candidate?.location,
+      },
+      employmentDetails: {
+        jobTitle: application.job_title,
+        department: "Logistics Operations",
+        hiredDate: new Date().toISOString(),
+      },
+      documents: {
+        resumeOriginalName: application.resume?.original_filename,
+        resumeFilePath: application.resume?.file_url,
+      },
+      screeningScore: application.screening_score ?? undefined,
+    });
+    setTransferred(true);
+  };
 
   useEffect(() => {
     if (!isOpen || !applicationId) {
@@ -343,6 +371,18 @@ export default function CandidateProfileDrawer({
               </Link>
 
               <div className="flex items-center gap-2">
+                {(application.current_status === "HIRED" || application.current_status === "OFFER_ACCEPTED") && (
+                  <button
+                    type="button"
+                    onClick={handleTransferToOnboarding}
+                    disabled={transferred}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white shadow-2xs transition cursor-pointer disabled:bg-emerald-100 disabled:text-emerald-800"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    <span>{transferred ? "Transferred to Onboarding" : "Transfer to Employee Onboarding"}</span>
+                  </button>
+                )}
+
                 {application.current_status !== "REJECTED" && (
                   <button
                     type="button"

@@ -28,6 +28,7 @@ import StatusBadge from "../components/ui/StatusBadge";
 import CandidateProfileDrawer from "../components/candidates/CandidateProfileDrawer";
 import RejectionModal from "../components/common/RejectionModal";
 import ResumePreviewModal from "../components/resumes/ResumePreviewModal";
+import { useHandoff } from "../../integration/handoffIntegration";
 import {
   acceptOffer,
   completeInterview,
@@ -117,6 +118,25 @@ export default function Pipeline() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState(false);
+  const { onCandidateHired } = useHandoff();
+
+  const handleHandoffClick = (candidate: ApplicationListItem) => {
+    onCandidateHired({
+      candidateId: candidate.id,
+      applicationId: candidate.id,
+      personalInfo: {
+        fullName: candidate.candidate_name,
+        email: candidate.candidate_email,
+        phone: candidate.candidate_phone,
+      },
+      employmentDetails: {
+        jobTitle: candidate.job_title,
+        department: "Logistics Operations",
+        hiredDate: new Date().toISOString(),
+      },
+      screeningScore: candidate.screening_score ?? undefined,
+    });
+  };
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
@@ -497,6 +517,17 @@ export default function Pipeline() {
                                 className="px-2 py-0.5 bg-emerald-600 text-white rounded text-[11px] font-medium hover:bg-emerald-700 transition cursor-pointer"
                               >
                                 Accept & Hire
+                              </button>
+                            )}
+
+                            {column.key === "HIRED" && (
+                              <button
+                                type="button"
+                                onClick={() => handleHandoffClick(candidate)}
+                                className="px-2 py-0.5 bg-emerald-700 text-white rounded text-[10px] font-semibold hover:bg-emerald-800 transition cursor-pointer"
+                                title="Transfer to Employee Onboarding"
+                              >
+                                Handoff to HRMS
                               </button>
                             )}
 
