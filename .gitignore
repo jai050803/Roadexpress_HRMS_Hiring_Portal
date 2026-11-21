@@ -71,3 +71,9 @@ backend/uploads/
 
 # Project documentation reference (not committed to codebase repository)
 project_files/
+screenshots/
+
+# Offline explanation & meeting defense guides
+EXPLANATION_*.md
+MEETING_*.md
+
