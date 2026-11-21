@@ -15,6 +15,8 @@ export { default as Jobs } from './pages/Jobs';
 export { default as JobDetail } from './pages/JobDetail';
 export { default as Candidates } from './pages/Candidates';
 export { default as UploadResume } from './pages/UploadResume';
+export { default as Pipeline } from './pages/Pipeline';
+export { default as ResumePreviewModal } from './components/resumes/ResumePreviewModal';
 export { default as CandidateProfileDrawer } from './components/candidates/CandidateProfileDrawer';
 export { default as CreateJobModal } from './components/jobs/CreateJobModal';
 export { default as LinkedInCopyPanel } from './components/jobs/LinkedInCopyPanel';

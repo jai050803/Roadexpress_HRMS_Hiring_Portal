@@ -12,6 +12,7 @@ import JobDetail from './pages/JobDetail';
 import Candidates from './pages/Candidates';
 import CandidateDossier from './pages/CandidateDossier';
 import UploadResume from './pages/UploadResume';
+import Pipeline from './pages/Pipeline';
 import AppShell from './components/layout/AppShell';
 import Header from './components/layout/Header';
 
@@ -61,14 +62,8 @@ export const HiringPortal: React.FC<HiringPortalProps> = ({
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/new" element={<CreateJobPage />} />
             <Route path="/jobs/:id" element={<JobDetail />} />
-            <Route
-              path="/pipeline"
-              element={<PlaceholderPage title="Hiring Pipeline" subtitle="Visual candidate progression board." />}
-            />
-            <Route
-              path="/pipeline/:jobId"
-              element={<PlaceholderPage title="Job Pipeline" subtitle="Kanban pipeline for specific job opening." />}
-            />
+            <Route path="/pipeline" element={<Pipeline />} />
+            <Route path="/pipeline/:jobId" element={<Pipeline />} />
             <Route path="/candidates" element={<Candidates />} />
             <Route path="/candidates/:id" element={<CandidateDossier />} />
             <Route path="/upload-cv" element={<UploadResume />} />
