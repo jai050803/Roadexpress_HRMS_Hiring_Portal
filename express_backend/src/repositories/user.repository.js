@@ -24,6 +24,12 @@ class UserRepository extends BaseRepository {
     const result = await this.query(sql, [id]);
     return result.rows[0] || null;
   }
+
+  async listActiveUsers() {
+    const sql = `SELECT id, full_name as name, email, role FROM ${this.tableName} WHERE is_active = true ORDER BY full_name ASC`;
+    const result = await this.query(sql);
+    return result.rows;
+  }
 }
 
 module.exports = UserRepository;

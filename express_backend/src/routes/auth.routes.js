@@ -20,6 +20,8 @@ function createAuthRoutes(authController, authIntegration) {
   router.post('/login', validate(loginSchema), authController.login);
   router.post('/register', validate(registerSchema), authController.register);
   router.get('/me', authIntegration.requireAuth(), authController.getMe);
+  router.get('/hr-users', authIntegration.requireAuth(), authController.listHRUsers);
+  router.post('/logout', (req, res) => res.json({ success: true, message: 'Logged out' }));
 
   return router;
 }

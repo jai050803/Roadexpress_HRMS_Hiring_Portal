@@ -89,6 +89,10 @@ class AuthService extends BaseService {
     }
     return user;
   }
+
+  async listHRUsers() {
+    return await this.userRepo.listActiveUsers();
+  }
 }
 
 module.exports = AuthService;

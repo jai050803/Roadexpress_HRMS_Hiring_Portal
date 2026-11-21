@@ -33,6 +33,15 @@ class AuthController extends BaseController {
       next(error);
     }
   };
+
+  listHRUsers = async (req, res, next) => {
+    try {
+      const users = await this.authService.listHRUsers();
+      return this.sendSuccess(res, users, 'HR users retrieved');
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 module.exports = AuthController;

@@ -15,6 +15,7 @@ import UploadResume from './pages/UploadResume';
 import Pipeline from './pages/Pipeline';
 import Interviews from './pages/Interviews';
 import CVBank from './pages/CVBank';
+import LoginPage from './pages/Login';
 import AppShell from './components/layout/AppShell';
 import Header from './components/layout/Header';
 
@@ -51,14 +52,20 @@ export const HiringPortal: React.FC<HiringPortalProps> = ({
     configureHttp({
       baseUrl: apiBaseUrl,
       getToken: () => authToken || localStorage.getItem('roadexpress_hiring_token'),
+      onUnauthorized: () => {
+        if (!embedded && !window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+      },
     });
-  }, [apiBaseUrl, authToken]);
+  }, [apiBaseUrl, authToken, embedded]);
 
   return (
     <AuthProvider hostToken={authToken} hostUser={authUser} onLogout={onLogout}>
       <LayoutProvider embedded={embedded}>
         <HandoffProvider onCandidateHired={onCandidateHired}>
           <Routes>
+            <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/jobs" element={<Jobs />} />

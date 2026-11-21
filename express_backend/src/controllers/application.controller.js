@@ -150,6 +150,112 @@ class ApplicationController extends BaseController {
       next(error);
     }
   };
+
+  shortlist = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { remarks } = req.body;
+      const changedById = req.hiringUser ? req.hiringUser.id : null;
+      const result = await this.applicationService.updateStatus(id, 'SHORTLISTED', { changedById, remarks });
+      return this.sendSuccess(res, result, 'Application shortlisted');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  reject = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { reason, remarks } = req.body;
+      const changedById = req.hiringUser ? req.hiringUser.id : null;
+      const result = await this.applicationService.updateStatus(id, 'REJECTED', { changedById, reason, remarks });
+      return this.sendSuccess(res, result, 'Application rejected');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  makeOffer = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { remarks } = req.body;
+      const changedById = req.hiringUser ? req.hiringUser.id : null;
+      const result = await this.applicationService.updateStatus(id, 'OFFER_EXTENDED', { changedById, remarks });
+      return this.sendSuccess(res, result, 'Offer extended');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  acceptOffer = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { remarks } = req.body;
+      const changedById = req.hiringUser ? req.hiringUser.id : null;
+      const result = await this.applicationService.updateStatus(id, 'HIRED', { changedById, remarks });
+      return this.sendSuccess(res, result, 'Offer accepted — candidate hired');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  declineOffer = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { remarks } = req.body;
+      const changedById = req.hiringUser ? req.hiringUser.id : null;
+      const result = await this.applicationService.updateStatus(id, 'REJECTED', { changedById, reason: 'Candidate declined offer', remarks });
+      return this.sendSuccess(res, result, 'Offer declined');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  lapseOffer = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { remarks } = req.body;
+      const changedById = req.hiringUser ? req.hiringUser.id : null;
+      const result = await this.applicationService.updateStatus(id, 'REJECTED', { changedById, reason: 'Offer lapsed', remarks });
+      return this.sendSuccess(res, result, 'Offer marked lapsed');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  bulkShortlist = async (req, res, next) => {
+    try {
+      const { application_ids, remarks } = req.body;
+      const changedById = req.hiringUser ? req.hiringUser.id : null;
+      let count = 0;
+      for (const appId of (application_ids || [])) {
+        try {
+          await this.applicationService.updateStatus(appId, 'SHORTLISTED', { changedById, remarks });
+          count++;
+        } catch (e) {}
+      }
+      return this.sendSuccess(res, { count, total: (application_ids || []).length }, 'Bulk shortlist completed');
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  bulkReject = async (req, res, next) => {
+    try {
+      const { application_ids, reason, remarks } = req.body;
+      const changedById = req.hiringUser ? req.hiringUser.id : null;
+      let count = 0;
+      for (const appId of (application_ids || [])) {
+        try {
+          await this.applicationService.updateStatus(appId, 'REJECTED', { changedById, reason, remarks });
+          count++;
+        } catch (e) {}
+      }
+      return this.sendSuccess(res, { count, total: (application_ids || []).length }, 'Bulk reject completed');
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 module.exports = ApplicationController;

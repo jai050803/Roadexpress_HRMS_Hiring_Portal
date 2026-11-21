@@ -42,11 +42,16 @@ export interface CVBankFilterQuery {
 }
 
 export async function loginHR(email: string, password: string): Promise<{ success: boolean; token?: string; user?: HRUser }> {
-  const res = await http.post<{ success: boolean; token?: string; user?: HRUser }>("/auth/login", { email, password });
-  if (res?.token) {
-    localStorage.setItem("roadexpress_hiring_token", res.token);
+  const res = await http.post<any>("/auth/login", { email, password });
+  const token = res?.token || res?.data?.token;
+  const user = res?.user || res?.data?.user;
+  if (token) {
+    localStorage.setItem("roadexpress_hiring_token", token);
   }
-  return res;
+  if (user) {
+    localStorage.setItem("roadexpress_hiring_user", JSON.stringify(user));
+  }
+  return { success: true, token, user };
 }
 
 export async function logoutHR(): Promise<void> {

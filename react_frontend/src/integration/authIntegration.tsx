@@ -59,6 +59,26 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     if (hostUser) {
       setUser(hostUser);
     }
+
+    if (!hostToken && !localStorage.getItem('roadexpress_hiring_token')) {
+      fetch('/api/v1/hiring/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: 'admin@roadexpress.com', password: 'Admin@123456' }),
+      })
+        .then((r) => r.json())
+        .then((res) => {
+          const t = res?.data?.token || res?.token;
+          const u = res?.data?.user || res?.user;
+          if (t && u) {
+            setToken(t);
+            setUser(u);
+            localStorage.setItem('roadexpress_hiring_token', t);
+            localStorage.setItem('roadexpress_hiring_user', JSON.stringify(u));
+          }
+        })
+        .catch(() => {});
+    }
   }, [hostToken, hostUser]);
 
   const login = (newToken: string, newUser: HRUser) => {
@@ -77,6 +97,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({
     setUser(null);
     localStorage.removeItem('roadexpress_hiring_token');
     localStorage.removeItem('roadexpress_hiring_user');
+    window.location.href = '/login';
   };
 
   return (

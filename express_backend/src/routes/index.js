@@ -50,7 +50,7 @@ function createHiringRouter({ controllers, integrations }) {
   }
 
   if (controllers.applicationController && integrations.authIntegration) {
-    router.use('/applications', createApplicationRoutes(controllers.applicationController, integrations.authIntegration));
+    router.use('/applications', createApplicationRoutes(controllers.applicationController, integrations.authIntegration, controllers.interviewController));
   }
 
   if (controllers.interviewController && integrations.authIntegration) {
