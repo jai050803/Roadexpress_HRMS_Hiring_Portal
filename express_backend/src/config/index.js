@@ -17,7 +17,15 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:3000,http://localhost:3001'),
   UPLOAD_DIR: z.string().default('./uploads'),
   MAX_FILE_SIZE_MB: z.string().default('5').transform(Number),
-  GEMINI_API_KEY: z.string().optional().default('')
+  GEMINI_API_KEY: z.string().optional().default(''),
+  GEMINI_MODEL: z.string().default('gemini-1.5-flash'),
+  EMAIL_PROVIDER: z.string().default('smtp'),
+  SMTP_HOST: z.string().default('smtp.gmail.com'),
+  SMTP_PORT: z.string().default('587').transform(Number),
+  SMTP_USER: z.string().optional().default(''),
+  SMTP_PASS: z.string().optional().default(''),
+  EMAIL_FROM_ADDRESS: z.string().default('hr@roadexpress.com'),
+  EMAIL_FROM_NAME: z.string().default('Road Express HR Team')
 });
 
 const parsedEnv = envSchema.safeParse(process.env);
@@ -57,6 +65,16 @@ module.exports = {
     maxSize: env.MAX_FILE_SIZE_MB * 1024 * 1024
   },
   gemini: {
-    apiKey: env.GEMINI_API_KEY
+    apiKey: env.GEMINI_API_KEY,
+    model: env.GEMINI_MODEL
+  },
+  email: {
+    provider: env.EMAIL_PROVIDER,
+    host: env.SMTP_HOST,
+    port: env.SMTP_PORT,
+    user: env.SMTP_USER,
+    pass: env.SMTP_PASS,
+    fromAddress: env.EMAIL_FROM_ADDRESS,
+    fromName: env.EMAIL_FROM_NAME
   }
 };
