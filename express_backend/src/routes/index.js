@@ -5,6 +5,8 @@ const createJobRoutes = require('./job.routes');
 const createCandidateRoutes = require('./candidate.routes');
 const createResumeRoutes = require('./resume.routes');
 const createApplicationRoutes = require('./application.routes');
+const createInterviewRoutes = require('./interview.routes');
+const createCVBankRoutes = require('./cvBank.routes');
 
 function createHiringRouter({ controllers, integrations }) {
   const router = express.Router();
@@ -49,6 +51,14 @@ function createHiringRouter({ controllers, integrations }) {
 
   if (controllers.applicationController && integrations.authIntegration) {
     router.use('/applications', createApplicationRoutes(controllers.applicationController, integrations.authIntegration));
+  }
+
+  if (controllers.interviewController && integrations.authIntegration) {
+    router.use('/interviews', createInterviewRoutes(controllers.interviewController, integrations.authIntegration));
+  }
+
+  if (controllers.cvBankController && integrations.authIntegration) {
+    router.use('/cv-bank', createCVBankRoutes(controllers.cvBankController, integrations.authIntegration));
   }
 
   return router;

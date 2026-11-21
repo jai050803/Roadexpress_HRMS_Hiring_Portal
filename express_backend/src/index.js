@@ -11,6 +11,8 @@ const ResumeRepository = require('./repositories/resume.repository');
 const ApplicationRepository = require('./repositories/application.repository');
 const StatusHistoryRepository = require('./repositories/statusHistory.repository');
 const ScreeningRepository = require('./repositories/screening.repository');
+const InterviewRepository = require('./repositories/interview.repository');
+const FeedbackRepository = require('./repositories/feedback.repository');
 
 const AuthService = require('./services/auth.service');
 const JobService = require('./services/job.service');
@@ -19,12 +21,16 @@ const ResumeParserService = require('./services/resumeParser.service');
 const ResumeService = require('./services/resume.service');
 const ScreeningService = require('./services/screening.service');
 const ApplicationService = require('./services/application.service');
+const InterviewService = require('./services/interview.service');
+const OnboardingService = require('./services/onboarding.service');
 
 const AuthController = require('./controllers/auth.controller');
 const JobController = require('./controllers/job.controller');
 const CandidateController = require('./controllers/candidate.controller');
 const ResumeController = require('./controllers/resume.controller');
 const ApplicationController = require('./controllers/application.controller');
+const InterviewController = require('./controllers/interview.controller');
+const CVBankController = require('./controllers/cvBank.controller');
 
 const createHiringRouter = require('./routes');
 const { errorHandler } = require('./middleware/errorHandler.middleware');
@@ -63,6 +69,8 @@ function createHiringModule(options = {}) {
   const applicationRepository = new ApplicationRepository(pool);
   const statusHistoryRepository = new StatusHistoryRepository(pool);
   const screeningRepository = new ScreeningRepository(pool);
+  const interviewRepository = new InterviewRepository(pool);
+  const feedbackRepository = new FeedbackRepository(pool);
 
   const authService = new AuthService(
     { userRepository },
@@ -108,11 +116,34 @@ function createHiringModule(options = {}) {
     }
   );
 
+  const interviewService = new InterviewService(
+    {
+      interviewRepository,
+      feedbackRepository,
+      applicationRepository,
+      statusHistoryRepository
+    },
+    {},
+    {}
+  );
+
+  const onboardingService = new OnboardingService(
+    {
+      applicationRepository,
+      jobRepository,
+      candidateRepository,
+      resumeRepository
+    },
+    { onboardingIntegration }
+  );
+
   const authController = new AuthController(authService);
   const jobController = new JobController(jobService);
   const candidateController = new CandidateController(candidateService);
   const resumeController = new ResumeController(resumeService);
   const applicationController = new ApplicationController(applicationService);
+  const interviewController = new InterviewController(interviewService, onboardingService);
+  const cvBankController = new CVBankController(applicationRepository, storageIntegration);
 
   const hiringRouter = createHiringRouter({
     controllers: {
@@ -120,7 +151,9 @@ function createHiringModule(options = {}) {
       jobController,
       candidateController,
       resumeController,
-      applicationController
+      applicationController,
+      interviewController,
+      cvBankController
     },
     integrations: {
       authIntegration,
@@ -145,7 +178,9 @@ function createHiringModule(options = {}) {
       resumeRepository,
       applicationRepository,
       statusHistoryRepository,
-      screeningRepository
+      screeningRepository,
+      interviewRepository,
+      feedbackRepository
     },
     services: {
       authService,
@@ -154,14 +189,18 @@ function createHiringModule(options = {}) {
       resumeParserService,
       resumeService,
       screeningService,
-      applicationService
+      applicationService,
+      interviewService,
+      onboardingService
     },
     controllers: {
       authController,
       jobController,
       candidateController,
       resumeController,
-      applicationController
+      applicationController,
+      interviewController,
+      cvBankController
     },
     errorHandler
   };
