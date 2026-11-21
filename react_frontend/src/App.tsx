@@ -9,6 +9,9 @@ import Dashboard from './pages/Dashboard';
 import Jobs from './pages/Jobs';
 import CreateJobPage from './pages/CreateJob';
 import JobDetail from './pages/JobDetail';
+import Candidates from './pages/Candidates';
+import CandidateDossier from './pages/CandidateDossier';
+import UploadResume from './pages/UploadResume';
 import AppShell from './components/layout/AppShell';
 import Header from './components/layout/Header';
 
@@ -66,10 +69,9 @@ export const HiringPortal: React.FC<HiringPortalProps> = ({
               path="/pipeline/:jobId"
               element={<PlaceholderPage title="Job Pipeline" subtitle="Kanban pipeline for specific job opening." />}
             />
-            <Route
-              path="/candidates/:id"
-              element={<PlaceholderPage title="Candidate Dossier" subtitle="Resume parsing, AI screening breakdown, and interview history." />}
-            />
+            <Route path="/candidates" element={<Candidates />} />
+            <Route path="/candidates/:id" element={<CandidateDossier />} />
+            <Route path="/upload-cv" element={<UploadResume />} />
             <Route
               path="/interviews"
               element={<PlaceholderPage title="Interview Calendar" subtitle="Upcoming candidate interview scheduling and feedback scoring." />}
@@ -77,10 +79,6 @@ export const HiringPortal: React.FC<HiringPortalProps> = ({
             <Route
               path="/cv-bank"
               element={<PlaceholderPage title="CV Talent Bank" subtitle="Centralized candidate archive with skill search and CSV export." />}
-            />
-            <Route
-              path="/upload-cv"
-              element={<PlaceholderPage title="Upload Emailed CV" subtitle="Direct resume upload and automated parsing." />}
             />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Routes>

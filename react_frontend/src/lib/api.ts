@@ -111,6 +111,28 @@ export async function previewJobContent(
   return http.post<JobContentPreviewResponse>("/jobs/preview-content", payload);
 }
 
+export async function listCandidates(params: {
+  search?: string;
+  skill?: string;
+  page?: number;
+  limit?: number;
+} = {}): Promise<{ candidates: CandidateInfo[]; total: number; page: number; limit: number }> {
+  try {
+    const res = await http.get<any>("/candidates", params);
+    if (res?.candidates) return res;
+    if (Array.isArray(res)) {
+      return { candidates: res, total: res.length, page: params.page || 1, limit: params.limit || 50 };
+    }
+    return { candidates: [], total: 0, page: 1, limit: 50 };
+  } catch {
+    return { candidates: [], total: 0, page: 1, limit: 50 };
+  }
+}
+
+export async function getCandidate(id: string): Promise<CandidateInfo & { applications?: ApplicationDetail[] }> {
+  return http.get<CandidateInfo & { applications?: ApplicationDetail[] }>(`/candidates/${id}`);
+}
+
 export async function listApplications(
   params: ListApplicationsParams = {}
 ): Promise<ApplicationListResponse> {
