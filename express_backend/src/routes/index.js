@@ -1,6 +1,8 @@
 const express = require('express');
 const { checkConnection } = require('../database/connection');
 const createAuthRoutes = require('./auth.routes');
+const createJobRoutes = require('./job.routes');
+const createCandidateRoutes = require('./candidate.routes');
 
 function createHiringRouter({ controllers, integrations }) {
   const router = express.Router();
@@ -29,6 +31,14 @@ function createHiringRouter({ controllers, integrations }) {
 
   if (controllers.authController && integrations.authIntegration) {
     router.use('/auth', createAuthRoutes(controllers.authController, integrations.authIntegration));
+  }
+
+  if (controllers.jobController && integrations.authIntegration) {
+    router.use('/jobs', createJobRoutes(controllers.jobController, integrations.authIntegration));
+  }
+
+  if (controllers.candidateController && integrations.authIntegration) {
+    router.use('/candidates', createCandidateRoutes(controllers.candidateController, integrations.authIntegration));
   }
 
   return router;
