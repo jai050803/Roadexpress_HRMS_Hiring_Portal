@@ -63,6 +63,7 @@ export const HiringPortal: React.FC<HiringPortalProps> = ({
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/jobs" element={<Jobs />} />
             <Route path="/jobs/new" element={<CreateJobPage />} />
+            <Route path="/jobs/create" element={<Navigate to="/jobs/new" replace />} />
             <Route path="/jobs/:id" element={<JobDetail />} />
             <Route path="/pipeline" element={<Pipeline />} />
             <Route path="/pipeline/:jobId" element={<Pipeline />} />

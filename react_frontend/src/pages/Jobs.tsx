@@ -134,14 +134,13 @@ export default function Jobs() {
             >
               <RefreshCw className={`w-3.5 h-3.5 ${loading ? "animate-spin" : ""}`} />
             </button>
-            <button
-              type="button"
-              onClick={() => setIsCreateModalOpen(true)}
+            <Link
+              to="/jobs/new"
               className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-brand-500 hover:bg-brand-600 text-white font-medium text-xs transition shadow-2xs cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Create role</span>
-            </button>
+            </Link>
           </div>
         }
       />

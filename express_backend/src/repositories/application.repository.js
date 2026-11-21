@@ -65,6 +65,24 @@ class ApplicationRepository extends BaseRepository {
     return result.rows[0] || null;
   }
 
+  async findByReferenceNumber(referenceNumber) {
+    const sql = `
+      SELECT a.*,
+             c.name as candidate_name,
+             c.email as candidate_email,
+             c.phone as candidate_phone,
+             j.title as job_title,
+             j.department as job_department
+      FROM ${this.tableName} a
+      INNER JOIN hiring_candidates c ON c.id = a.candidate_id
+      INNER JOIN hiring_jobs j ON j.id = a.job_id
+      WHERE UPPER(a.reference_number) = UPPER($1)
+      LIMIT 1
+    `;
+    const result = await this.query(sql, [referenceNumber]);
+    return result.rows[0] || null;
+  }
+
   async findByJobAndCandidate(jobId, candidateId) {
     const sql = `SELECT * FROM ${this.tableName} WHERE job_id = $1 AND candidate_id = $2 LIMIT 1`;
     const result = await this.query(sql, [jobId, candidateId]);

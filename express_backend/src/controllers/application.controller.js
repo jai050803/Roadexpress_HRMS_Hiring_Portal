@@ -61,7 +61,26 @@ class ApplicationController extends BaseController {
         source: source || 'portal'
       });
 
-      return this.sendCreated(res, result, 'Application submitted successfully');
+      return res.status(201).json({
+        success: true,
+        reference_number: result.application.reference_number,
+        job_title: result.application.job_title || '',
+        message: 'Application submitted successfully',
+        data: result
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  track = async (req, res, next) => {
+    try {
+      const { email, reference_number } = req.query;
+      if (!email || !reference_number) {
+        return this.sendError(res, 'Email and reference number are required', 400);
+      }
+      const tracking = await this.applicationService.trackByReference(reference_number, email);
+      return res.json(tracking);
     } catch (error) {
       next(error);
     }

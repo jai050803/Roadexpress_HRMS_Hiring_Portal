@@ -27,6 +27,7 @@ app.get('/', (req, res) => {
 const hiringModule = createHiringModule();
 app.use('/api/v1/hiring', hiringModule.router);
 app.use('/api/hiring', hiringModule.router);
+app.use('/v1', hiringModule.router);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

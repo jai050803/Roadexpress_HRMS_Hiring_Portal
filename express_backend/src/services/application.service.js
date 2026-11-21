@@ -201,6 +201,51 @@ class ApplicationService extends BaseService {
 
     return result.screening;
   }
+
+  async trackByReference(referenceNumber, email) {
+    if (!referenceNumber || !email) {
+      const error = new Error('Reference number and candidate email are required');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const app = await this.appRepo.findByReferenceNumber(referenceNumber.trim());
+    if (!app || app.candidate_email.trim().toLowerCase() !== email.trim().toLowerCase()) {
+      const error = new Error('No application found matching the provided details');
+      error.statusCode = 404;
+      error.code = 'NOT_FOUND';
+      throw error;
+    }
+
+    const statusMapping = {
+      APPLIED: { label: 'Application Received', stage: 1 },
+      SCREENED: { label: 'Under Review', stage: 2 },
+      SCREENING: { label: 'Under Review', stage: 2 },
+      SHORTLISTED: { label: 'Shortlisted — Interview Details Sent', stage: 3 },
+      INTERVIEW_SCHEDULED: { label: 'Shortlisted — Interview Details Sent', stage: 3 },
+      INTERVIEWED: { label: 'Under Review', stage: 2 },
+      INTERVIEW_COMPLETED: { label: 'Under Review', stage: 2 },
+      OFFERED: { label: 'Offer Extended', stage: 3 },
+      OFFER_EXTENDED: { label: 'Offer Extended', stage: 3 },
+      OFFER_ACCEPTED: { label: 'Welcome to Road Express', stage: 4 },
+      HIRED: { label: 'Welcome to Road Express', stage: 4 },
+      OFFER_DECLINED: { label: 'Not Selected', stage: 4 },
+      OFFER_LAPSED: { label: 'Not Selected', stage: 4 },
+      REJECTED: { label: 'Not Selected', stage: 4 },
+      CLOSED: { label: 'Not Selected', stage: 4 }
+    };
+
+    const currentStatus = app.current_status || app.status || 'APPLIED';
+    const meta = statusMapping[currentStatus] || { label: 'Under Review', stage: 2 };
+
+    return {
+      reference_number: app.reference_number,
+      job_title: app.job_title,
+      applied_at: app.created_at,
+      status_label: meta.label,
+      status_stage: meta.stage
+    };
+  }
 }
 
 module.exports = ApplicationService;

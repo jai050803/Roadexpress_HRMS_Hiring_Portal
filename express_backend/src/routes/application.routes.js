@@ -21,7 +21,9 @@ function createApplicationRoutes(applicationController, authIntegration) {
     remarks: z.string().optional()
   });
 
+  router.get('/track', applicationController.track);
   router.post('/apply', upload.single('resume'), applicationController.apply);
+  router.post('/', upload.single('resume'), applicationController.apply);
   router.get('/', authIntegration.requireAuth(), applicationController.listApplications);
   router.get('/pipeline-metrics', authIntegration.requireAuth(), applicationController.getPipelineMetrics);
   router.get('/:id', authIntegration.requireAuth(), applicationController.getApplication);
