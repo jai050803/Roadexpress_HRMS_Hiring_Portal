@@ -59,11 +59,20 @@ CREATE TABLE IF NOT EXISTS hiring_candidates (
 CREATE TABLE IF NOT EXISTS hiring_resumes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     candidate_id UUID REFERENCES hiring_candidates(id) ON DELETE CASCADE,
+    application_id UUID,
     file_path VARCHAR(500) NOT NULL,
+    file_url VARCHAR(1000),
     original_filename VARCHAR(255) NOT NULL,
+    file_name VARCHAR(255),
     file_size INTEGER NOT NULL,
-    mime_type VARCHAR(100) NOT NULL,
+    file_size_bytes INTEGER,
+    file_hash VARCHAR(64),
+    mime_type VARCHAR(100) NOT NULL DEFAULT 'application/pdf',
+    parse_status VARCHAR(50) NOT NULL DEFAULT 'pending',
     parsed_text TEXT,
+    parsed_json JSONB,
+    parse_error TEXT,
+    parsed_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
