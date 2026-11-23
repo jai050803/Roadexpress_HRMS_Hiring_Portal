@@ -1,35 +1,34 @@
-const { getPool } = require('../database/connection');
+const { prisma } = require('../database/prisma');
 
 class BaseRepository {
   constructor(pool = null) {
-    this.pool = pool || getPool();
+    this.prisma = prisma;
   }
 
   async query(text, params = []) {
     const start = Date.now();
-    const res = await this.pool.query(text, params);
+    let rows;
+    if (params && params.length > 0) {
+      rows = await this.prisma.$queryRawUnsafe(text, ...params);
+    } else {
+      rows = await this.prisma.$queryRawUnsafe(text);
+    }
     const duration = Date.now() - start;
 
     if (process.env.NODE_ENV === 'development' && duration > 500) {
       console.warn(`Slow Query [${duration}ms]: ${text}`);
     }
 
-    return res;
+    return {
+      rows: Array.isArray(rows) ? rows : [],
+      rowCount: Array.isArray(rows) ? rows.length : 0
+    };
   }
 
   async transaction(callback) {
-    const client = await this.pool.connect();
-    try {
-      await client.query('BEGIN');
-      const result = await callback(client);
-      await client.query('COMMIT');
-      return result;
-    } catch (error) {
-      await client.query('ROLLBACK');
-      throw error;
-    } finally {
-      client.release();
-    }
+    return await this.prisma.$transaction(async (tx) => {
+      return await callback(tx);
+    });
   }
 
   async findById(tableName, id) {

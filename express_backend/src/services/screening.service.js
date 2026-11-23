@@ -116,8 +116,18 @@ class ScreeningService extends BaseService {
       ? parsedResume.skills.join(', ')
       : 'Parsed from resume context';
 
-    const prompt = `You are an expert talent acquisition and screening evaluator for Road Express Freight.
-Evaluate the candidate's resume against the target job role.
+    const prompt = `You are a strict, objective talent acquisition and screening evaluator for Road Express Freight.
+Evaluate the candidate's resume strictly against the target job role.
+
+CRITICAL EVALUATION RULES:
+1. FUNCTIONAL ROLE & DOMAIN ALIGNMENT (MOST CRITICAL RULE):
+   - Assess whether the candidate's primary career track, education, and professional identity match the functional day-to-day nature of the role.
+   - If a candidate with a Software Engineering / IT / Data Science background applies for an Operational, Logistics, Fleet, or Supply Chain role without hands-on operational experience, identify this as a DOMAIN MISMATCH. Writing software, algorithms, or ML scripts that touch on logistics/supply chain does NOT qualify a software engineer as an operational Supply Chain Executive or Dispatcher.
+   - For domain mismatches where a software engineer/developer applies for an operations role (or vice versa), award a low fit score (between 25 and 45) and explicitly state in the rationale that the candidate is a software/data science profile fundamentally suited for engineering roles, and lacks hands-on logistics and physical operations execution experience.
+2. NO ASSUMING SOFT SKILLS:
+   - Do NOT assume communication, client management, or interpersonal skills without explicit evidence in their past roles or leadership experience.
+3. DO NOT INVENT JOB NEEDS:
+   - Do not rationalize fit by claiming the role "requires technical integration" or "coding" unless explicitly specified in the Job Description.
 
 Target Job Role:
 - Title: ${job.title}
@@ -134,20 +144,12 @@ Candidate Profile:
 Candidate Resume Text:
 ${fullResumeText ? fullResumeText.slice(0, 7000) : 'Skills: ' + skillsList}
 
-Task:
-Assess how well the candidate matches the requirements.
-1. Compare their skills, project work, and experience against the required skills: ${(job.required_skills || []).join(', ')}. Recognize synonymous or practical domain skills (for example: logistics operations, transport, documentation, and communication skills evidenced by their roles).
-2. Determine if their experience satisfies the minimum ${job.min_experience_years || 0} years requirement (hard_filter_passed).
-3. Compute an integer score from 0 to 100 based on overall suitability.
-4. List matched_skills and missing_skills accurately from the job requirements.
-5. Provide a clear 2-4 sentence llm_rationale explaining strengths, weaknesses, and why this score was awarded.
-
 Output MUST be strictly valid JSON matching this schema:
 {
   "score": integer between 0 and 100,
   "matched_skills": [string],
   "missing_skills": [string],
-  "llm_rationale": "2-4 sentence executive evaluation",
+  "llm_rationale": "2-4 sentence executive evaluation explaining functional fit, strengths, domain alignment or mismatch",
   "hard_filter_passed": boolean
 }`;
 

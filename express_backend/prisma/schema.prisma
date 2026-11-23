@@ -1,0 +1,413 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model HiringUser {
+  id                String                @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  email             String                @unique @db.VarChar(255)
+  passwordHash      String                @map("password_hash") @db.VarChar(255)
+  fullName          String                @map("full_name") @db.VarChar(255)
+  role              String                @default("recruiter") @db.VarChar(50)
+  isActive          Boolean               @default(true) @map("is_active")
+  createdAt         DateTime?             @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt         DateTime?             @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  interviewerFeed   HiringFeedback[]      @relation("FeedbackInterviewer")
+  submittedFeedback HiringFeedback[]      @relation("FeedbackSubmittedBy")
+  createdInterviews HiringInterview[]     @relation("InterviewCreatedBy")
+  interviewerJobs   HiringInterview[]     @relation("InterviewInterviewer")
+  createdJobs       HiringJob[]           @relation("JobCreatedBy")
+  statusHistory     HiringStatusHistory[] @relation("StatusHistoryChangedBy")
+
+  @@map("hiring_users")
+}
+
+model HiringJob {
+  id                     String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  title                  String              @db.VarChar(255)
+  department             String              @db.VarChar(100)
+  location               String?             @db.VarChar(255)
+  employmentType         String?             @default("full_time") @map("employment_type") @db.VarChar(50)
+  workMode               String?             @default("onsite") @map("work_mode") @db.VarChar(50)
+  educationQualification String?             @map("education_qualification")
+  minExperienceYears     Int?                @default(0) @map("min_experience_years")
+  requiredSkills         String[]            @map("required_skills")
+  responsibilitiesText   String?             @map("responsibilities_text")
+  salaryBand             String?             @map("salary_band") @db.VarChar(100)
+  minSalary              Decimal?            @map("min_salary") @db.Decimal(12, 2)
+  maxSalary              Decimal?            @map("max_salary") @db.Decimal(12, 2)
+  description            String?
+  requirements           String?
+  jdText                 String?             @map("jd_text")
+  applicationDeadline    DateTime?           @map("application_deadline") @db.Timestamptz(6)
+  maxApplications        Int?                @map("max_applications")
+  applicationsCount      Int                 @default(0) @map("applications_count")
+  status                 String              @default("draft") @db.VarChar(50)
+  linkedinPostCopy       String?             @map("linkedin_post_copy")
+  linkedinPosted         Boolean             @default(false) @map("linkedin_posted")
+  linkedinPostedAt       DateTime?           @map("linkedin_posted_at") @db.Timestamptz(6)
+  createdById            String?             @map("created_by_id") @db.Uuid
+  createdAt              DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt              DateTime?           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  applications           HiringApplication[]
+  interviews             HiringInterview[]
+  createdBy              HiringUser?         @relation("JobCreatedBy", fields: [createdById], references: [id], onUpdate: NoAction)
+
+  @@index([status], map: "idx_hiring_jobs_status")
+  @@index([department], map: "idx_hiring_jobs_dept")
+  @@map("hiring_jobs")
+}
+
+model HiringCandidate {
+  id                   String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  name                 String              @db.VarChar(255)
+  fullName             String?             @map("full_name") @db.VarChar(255)
+  email                String              @unique @db.VarChar(255)
+  phone                String?             @db.VarChar(50)
+  location             String?             @db.VarChar(100)
+  currentTitle         String?             @map("current_title") @db.VarChar(150)
+  totalExperienceYears Decimal?            @default(0) @map("total_experience_years") @db.Decimal(4, 1)
+  skills               String[]
+  linkedinUrl          String?             @map("linkedin_url") @db.VarChar(500)
+  portfolioUrl         String?             @map("portfolio_url") @db.VarChar(500)
+  createdAt            DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt            DateTime?           @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  applications         HiringApplication[]
+  resumes              HiringResume[]
+
+  @@index([email], map: "idx_hiring_candidates_email")
+  @@map("hiring_candidates")
+}
+
+model HiringResume {
+  id               String              @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  candidateId      String?             @map("candidate_id") @db.Uuid
+  applicationId    String?             @map("application_id") @db.Uuid
+  filePath         String              @map("file_path") @db.VarChar(500)
+  fileUrl          String?             @map("file_url") @db.VarChar(1000)
+  originalFilename String              @map("original_filename") @db.VarChar(255)
+  fileName         String?             @map("file_name") @db.VarChar(255)
+  fileSize         Int                 @map("file_size")
+  fileSizeBytes    Int?                @map("file_size_bytes")
+  fileHash         String?             @map("file_hash") @db.VarChar(64)
+  mimeType         String              @default("application/pdf") @map("mime_type") @db.VarChar(100)
+  parseStatus      String              @default("pending") @map("parse_status") @db.VarChar(50)
+  parsedText       String?             @map("parsed_text")
+  parsedJson       Json?               @map("parsed_json")
+  parseError       String?             @map("parse_error")
+  parsedAt         DateTime?           @map("parsed_at") @db.Timestamptz(6)
+  createdAt        DateTime?           @default(now()) @map("created_at") @db.Timestamptz(6)
+  applications     HiringApplication[]
+  candidate        HiringCandidate?    @relation(fields: [candidateId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("hiring_resumes")
+}
+
+model HiringApplication {
+  id               String                  @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  jobId            String                  @map("job_id") @db.Uuid
+  candidateId      String                  @map("candidate_id") @db.Uuid
+  resumeId         String?                 @map("resume_id") @db.Uuid
+  referenceNumber  String?                 @unique @map("reference_number") @db.VarChar(50)
+  source           String                  @default("portal") @db.VarChar(50)
+  status           String                  @default("APPLIED") @db.VarChar(50)
+  currentStatus    String                  @default("APPLIED") @map("current_status") @db.VarChar(50)
+  matchScore       Decimal?                @map("match_score") @db.Decimal(5, 2)
+  recruiterNotes   String?                 @map("recruiter_notes")
+  rejectionReason  String?                 @map("rejection_reason")
+  createdAt        DateTime?               @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime?               @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  candidate        HiringCandidate         @relation(fields: [candidateId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  job              HiringJob               @relation(fields: [jobId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  resume           HiringResume?           @relation(fields: [resumeId], references: [id], onUpdate: NoAction)
+  interviews       HiringInterview[]
+  screeningResults HiringScreeningResult[]
+  statusHistory    HiringStatusHistory[]
+
+  @@unique([jobId, candidateId], map: "uq_job_candidate")
+  @@index([jobId], map: "idx_hiring_apps_job_id")
+  @@index([candidateId], map: "idx_hiring_apps_candidate_id")
+  @@index([status], map: "idx_hiring_apps_status")
+  @@map("hiring_applications")
+}
+
+model HiringScreeningResult {
+  id               String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  applicationId    String            @map("application_id") @db.Uuid
+  score            Int               @default(0)
+  overallScore     Decimal           @default(0) @map("overall_score") @db.Decimal(5, 2)
+  matchedSkills    String[]          @map("matched_skills")
+  missingSkills    String[]          @map("missing_skills")
+  strengths        String[]
+  weaknesses       String[]
+  llmRationale     String?           @map("llm_rationale")
+  summary          String?
+  recommendations  String?
+  hardFilterPassed Boolean           @default(true) @map("hard_filter_passed")
+  rawResponse      Json?             @map("raw_response")
+  createdAt        DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
+  application      HiringApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("hiring_screening_results")
+}
+
+model HiringInterview {
+  id                 String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  applicationId      String            @map("application_id") @db.Uuid
+  jobRoleId          String?           @map("job_role_id") @db.Uuid
+  roundNumber        Int               @default(1) @map("round_number")
+  roundName          String            @default("Technical Round") @map("round_name") @db.VarChar(100)
+  scheduledAt        DateTime          @map("scheduled_at") @db.Timestamptz(6)
+  durationMinutes    Int               @default(45) @map("duration_minutes")
+  mode               String            @default("video") @db.VarChar(20)
+  location           String?
+  meetingLink        String?           @map("meeting_link") @db.VarChar(500)
+  interviewerId      String?           @map("interviewer_id") @db.Uuid
+  interviewerName    String?           @map("interviewer_name") @db.VarChar(255)
+  interviewerEmail   String?           @map("interviewer_email") @db.VarChar(255)
+  interviewerIds     String[]          @map("interviewer_ids") @db.Uuid
+  status             String            @default("SCHEDULED") @db.VarChar(50)
+  cancellationReason String?           @map("cancellation_reason")
+  hrNotes            String?           @map("hr_notes")
+  createdById        String?           @map("created_by_id") @db.Uuid
+  createdAt          DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt          DateTime?         @default(now()) @updatedAt @map("updated_at") @db.Timestamptz(6)
+  feedback           HiringFeedback[]
+  application        HiringApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  createdBy          HiringUser?       @relation("InterviewCreatedBy", fields: [createdById], references: [id], onUpdate: NoAction)
+  interviewer        HiringUser?       @relation("InterviewInterviewer", fields: [interviewerId], references: [id], onUpdate: NoAction)
+  jobRole            HiringJob?        @relation(fields: [jobRoleId], references: [id], onUpdate: NoAction)
+
+  @@index([applicationId], map: "idx_hiring_interviews_app_id")
+  @@map("hiring_interviews")
+}
+
+model HiringFeedback {
+  id                  String          @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  interviewId         String          @map("interview_id") @db.Uuid
+  interviewerId       String?         @map("interviewer_id") @db.Uuid
+  submittedBy         String?         @map("submitted_by") @db.Uuid
+  rating              Int?
+  overallRating       Int?            @map("overall_rating")
+  technicalSkills     Int?            @map("technical_skills")
+  technicalRating     Int?            @map("technical_rating")
+  communicationSkills Int?            @map("communication_skills")
+  communicationRating Int?            @map("communication_rating")
+  problemSolving      Int?            @map("problem_solving")
+  cultureRating       Int?            @map("culture_rating")
+  recommendation      String?         @db.VarChar(50)
+  decision            String?         @db.VarChar(50)
+  comments            String?
+  strengths           String?
+  concerns            String?
+  additionalNotes     String?         @map("additional_notes")
+  createdAt           DateTime?       @default(now()) @map("created_at") @db.Timestamptz(6)
+  interview           HiringInterview @relation(fields: [interviewId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  interviewer         HiringUser?     @relation("FeedbackInterviewer", fields: [interviewerId], references: [id], onUpdate: NoAction)
+  submittedUser       HiringUser?     @relation("FeedbackSubmittedBy", fields: [submittedBy], references: [id], onUpdate: NoAction)
+
+  @@map("hiring_feedback")
+}
+
+model HiringStatusHistory {
+  id            String            @id @default(dbgenerated("uuid_generate_v4()")) @db.Uuid
+  applicationId String            @map("application_id") @db.Uuid
+  oldStatus     String?           @map("old_status") @db.VarChar(50)
+  fromStatus    String?           @map("from_status") @db.VarChar(50)
+  newStatus     String            @map("new_status") @db.VarChar(50)
+  toStatus      String?           @map("to_status") @db.VarChar(50)
+  changedById   String?           @map("changed_by_id") @db.Uuid
+  changedByType String            @default("hr") @map("changed_by_type") @db.VarChar(20)
+  reason        String?
+  remarks       String?
+  createdAt     DateTime?         @default(now()) @map("created_at") @db.Timestamptz(6)
+  application   HiringApplication @relation(fields: [applicationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  changedBy     HiringUser?       @relation("StatusHistoryChangedBy", fields: [changedById], references: [id], onUpdate: NoAction)
+
+  @@index([applicationId], map: "idx_hiring_status_history_app_id")
+  @@map("hiring_status_history")
+}
+
+model alembic_version {
+  version_num String @id(map: "alembic_version_pkc") @db.VarChar(32)
+}
+
+model application_status_history {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  application_id String       @db.Uuid
+  from_status    String?      @db.VarChar(50)
+  to_status      String       @db.VarChar(50)
+  reason         String?
+  remarks        String?
+  changed_by     String?      @db.Uuid
+  changed_at     DateTime     @default(now()) @db.Timestamptz(6)
+  applications   applications @relation(fields: [application_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hr_users       hr_users?    @relation(fields: [changed_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([application_id], map: "idx_status_history_application")
+  @@index([changed_at(sort: Desc)], map: "idx_status_history_changed_at")
+}
+
+model applications {
+  id                         String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  candidate_id               String                       @db.Uuid
+  job_role_id                String                       @db.Uuid
+  resume_id                  String?                      @db.Uuid
+  applied_at                 DateTime                     @default(now()) @db.Timestamptz(6)
+  source                     String                       @default("portal") @db.VarChar(50)
+  idempotency_key            String                       @unique(map: "uq_applications_idempotency_key") @db.Uuid
+  reference_number           String                       @unique(map: "uq_applications_reference_number") @db.VarChar(50)
+  current_status             String                       @default("APPLIED") @db.VarChar(50)
+  status_version             Int                          @default(1)
+  uploaded_by_hr             String?                      @db.Uuid
+  application_status_history application_status_history[]
+  candidates                 candidates                   @relation(fields: [candidate_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  job_roles                  job_roles                    @relation(fields: [job_role_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hr_users                   hr_users?                    @relation(fields: [uploaded_by_hr], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  interviews                 interviews[]
+  notifications              notifications[]
+  resumes                    resumes?
+  screening_results          screening_results?
+
+  @@unique([candidate_id, job_role_id], map: "uq_applications_candidate_job_role")
+  @@index([applied_at(sort: Desc)], map: "idx_applications_applied_at")
+  @@index([candidate_id], map: "idx_applications_candidate")
+  @@index([job_role_id], map: "idx_applications_job_role")
+  @@index([source], map: "idx_applications_source")
+  @@index([current_status], map: "idx_applications_status")
+}
+
+model candidates {
+  id           String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String         @unique @db.VarChar(255)
+  name         String         @db.VarChar(255)
+  phone        String?        @db.VarChar(50)
+  created_at   DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime       @default(now()) @db.Timestamptz(6)
+  applications applications[]
+}
+
+model hr_users {
+  id                         String                       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name                       String                       @db.VarChar(255)
+  email                      String                       @unique @db.VarChar(255)
+  password_hash              String                       @db.VarChar(255)
+  role                       String                       @default("hr") @db.VarChar(50)
+  is_active                  Boolean                      @default(true)
+  created_at                 DateTime                     @default(now()) @db.Timestamptz(6)
+  application_status_history application_status_history[]
+  applications               applications[]
+  interviews                 interviews[]
+  job_roles                  job_roles[]
+}
+
+model interviews {
+  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  application_id     String       @db.Uuid
+  round_number       Int          @default(1)
+  mode               String       @db.VarChar(50)
+  status             String       @default("scheduled") @db.VarChar(50)
+  scheduled_at       DateTime     @db.Timestamptz(6)
+  duration_minutes   Int          @default(60)
+  interviewer_ids    String[]     @db.Uuid
+  meeting_link       String?      @db.VarChar(1000)
+  calendar_event_id  String?      @db.VarChar(500)
+  location           String?
+  required_documents String[]
+  conditions_text    String?
+  outcome_notes      String?
+  created_by         String?      @db.Uuid
+  created_at         DateTime     @default(now()) @db.Timestamptz(6)
+  updated_at         DateTime     @default(now()) @db.Timestamptz(6)
+  applications       applications @relation(fields: [application_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  hr_users           hr_users?    @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([application_id], map: "idx_interviews_application")
+  @@index([scheduled_at], map: "idx_interviews_scheduled_at")
+  @@index([status], map: "idx_interviews_status")
+}
+
+model job_roles {
+  id                      String         @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  title                   String         @db.VarChar(255)
+  department              String         @db.VarChar(255)
+  employment_type         String?        @db.VarChar(50)
+  location                String?        @db.VarChar(255)
+  work_mode               String?        @db.VarChar(50)
+  education_qualification String?
+  min_experience_years    Int?
+  required_skills         String[]
+  responsibilities_text   String?
+  salary_band             String?        @db.VarChar(100)
+  jd_text                 String?
+  jd_embedding            Float[]
+  application_deadline    DateTime?      @db.Timestamptz(6)
+  max_applications        Int?
+  applications_count      Int            @default(0)
+  status                  String         @default("draft") @db.VarChar(50)
+  linkedin_post_copy      String?
+  linkedin_posted         Boolean        @default(false)
+  linkedin_posted_at      DateTime?      @db.Timestamptz(6)
+  created_by              String?        @db.Uuid
+  created_at              DateTime       @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime       @default(now()) @db.Timestamptz(6)
+  applications            applications[]
+  hr_users                hr_users?      @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([department], map: "idx_job_roles_department")
+  @@index([status], map: "idx_job_roles_status")
+}
+
+model notifications {
+  id             String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  application_id String       @db.Uuid
+  type           String       @db.VarChar(100)
+  channel        String       @default("email") @db.VarChar(50)
+  status         String       @default("pending") @db.VarChar(50)
+  sent_at        DateTime?    @db.Timestamptz(6)
+  error_message  String?
+  created_at     DateTime     @default(now()) @db.Timestamptz(6)
+  applications   applications @relation(fields: [application_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([application_id, type], map: "uq_notifications_application_type")
+  @@index([application_id], map: "idx_notifications_application")
+  @@index([status], map: "idx_notifications_status")
+}
+
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model resumes {
+  id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  application_id  String       @unique @db.Uuid
+  file_url        String       @db.VarChar(1000)
+  file_name       String?      @db.VarChar(255)
+  file_hash       String?      @db.VarChar(64)
+  file_size_bytes Int?
+  parse_status    String       @default("pending") @db.VarChar(50)
+  parsed_json     Json?
+  parse_error     String?
+  parsed_at       DateTime?    @db.Timestamptz(6)
+  created_at      DateTime     @default(now()) @db.Timestamptz(6)
+  applications    applications @relation(fields: [application_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([parse_status], map: "idx_resumes_parse_status")
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model screening_results {
+  id                 String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  application_id     String       @unique @db.Uuid
+  score              Int
+  matched_skills     String[]
+  missing_skills     String[]
+  llm_rationale      String?
+  hard_filter_passed Boolean
+  decided_at         DateTime     @default(now()) @db.Timestamptz(6)
+  applications       applications @relation(fields: [application_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([hard_filter_passed], map: "idx_screening_hard_filter")
+  @@index([score(sort: Desc)], map: "idx_screening_score")
+}

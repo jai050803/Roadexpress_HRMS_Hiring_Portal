@@ -1,5 +1,6 @@
 const { Pool } = require('pg');
 const config = require('../config');
+const { prisma } = require('./prisma');
 
 let globalPool = null;
 
@@ -39,20 +40,29 @@ function getPool() {
 }
 
 async function checkConnection() {
-  const pool = getPool();
-  const client = await pool.connect();
   try {
-    const result = await client.query('SELECT NOW() as current_time');
+    const result = await prisma.$queryRaw`SELECT NOW() as current_time`;
     return {
       connected: true,
-      time: result.rows[0].current_time
+      time: result[0]?.current_time
     };
-  } finally {
-    client.release();
+  } catch (err) {
+    const pool = getPool();
+    const client = await pool.connect();
+    try {
+      const result = await client.query('SELECT NOW() as current_time');
+      return {
+        connected: true,
+        time: result.rows[0].current_time
+      };
+    } finally {
+      client.release();
+    }
   }
 }
 
 async function closePool() {
+  await prisma.$disconnect().catch(() => {});
   if (globalPool && typeof globalPool.end === 'function') {
     await globalPool.end();
     globalPool = null;
