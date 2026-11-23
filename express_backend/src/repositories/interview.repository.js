@@ -104,12 +104,12 @@ class InterviewRepository extends BaseRepository {
 
     if (dateFrom) {
       params.push(dateFrom);
-      sql += ` AND i.scheduled_at >= $${params.length}`;
+      sql += ` AND i.scheduled_at >= $${params.length}::timestamptz`;
     }
 
     if (dateTo) {
       params.push(dateTo);
-      sql += ` AND i.scheduled_at <= $${params.length}`;
+      sql += ` AND i.scheduled_at <= $${params.length}::timestamptz`;
     }
 
     if (interviewerId) {
