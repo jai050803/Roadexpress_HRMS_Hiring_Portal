@@ -1,17 +1,43 @@
 const { prisma } = require('../database/prisma');
+const { getPool } = require('../database/connection');
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 class BaseRepository {
   constructor(pool = null) {
     this.prisma = prisma;
+    this.pool = pool || getPool();
+  }
+
+  prepareSql(text, params) {
+    if (!params || params.length === 0) return text;
+    let modified = text;
+    params.forEach((param, index) => {
+      if (typeof param === 'string' && UUID_REGEX.test(param.trim())) {
+        const regex = new RegExp(`\\$${index + 1}(?![a-zA-Z0-9_:])`, 'g');
+        modified = modified.replace(regex, `$${index + 1}::uuid`);
+      }
+    });
+    return modified;
   }
 
   async query(text, params = []) {
     const start = Date.now();
     let rows;
-    if (params && params.length > 0) {
-      rows = await this.prisma.$queryRawUnsafe(text, ...params);
-    } else {
-      rows = await this.prisma.$queryRawUnsafe(text);
+    try {
+      const preparedText = this.prepareSql(text, params);
+      if (params && params.length > 0) {
+        rows = await this.prisma.$queryRawUnsafe(preparedText, ...params);
+      } else {
+        rows = await this.prisma.$queryRawUnsafe(preparedText);
+      }
+    } catch (err) {
+      if (this.pool && typeof this.pool.query === 'function') {
+        const fallbackRes = await this.pool.query(text, params);
+        rows = fallbackRes.rows || [];
+      } else {
+        throw err;
+      }
     }
     const duration = Date.now() - start;
 

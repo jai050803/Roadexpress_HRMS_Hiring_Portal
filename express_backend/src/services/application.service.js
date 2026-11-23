@@ -230,6 +230,8 @@ class ApplicationService extends BaseService {
       ...app,
       job_role_id: app.job_id,
       department: app.job_department || app.department,
+      status: app.current_status || app.status,
+      current_status: app.current_status || app.status,
       screening_score: app.screening_score !== null ? Number(app.screening_score) : null,
       match_score: app.match_score !== null ? parseFloat(app.match_score) : null,
       candidate,
