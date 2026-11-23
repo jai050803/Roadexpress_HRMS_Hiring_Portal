@@ -64,30 +64,102 @@ class JobService extends BaseService {
   }
 
   generateLinkedInCopy(data, portalUrl = 'https://careers.roadexpress.com') {
-    const title = data.title?.trim() || 'Exciting Role';
-    const dept = data.department?.trim() || 'Operations';
+    const title = data.title?.trim() || 'Professional';
+    const dept = data.department?.trim() || 'Logistics Operations';
     const location = data.location?.trim() || 'Pan-India';
+    const workMode = data.work_mode
+      ? data.work_mode.charAt(0).toUpperCase() + data.work_mode.slice(1).toLowerCase()
+      : 'Onsite';
+    const empType = data.employment_type
+      ? data.employment_type.replace('_', ' ').toUpperCase()
+      : 'FULL TIME';
+    const salaryBand = data.salary_band?.trim();
     const cleanPortal = portalUrl.replace(/\/+$/, '');
-    const jobId = data.id || 'preview';
+    const jobId = data.id || ':id';
+    const applyLink = `${cleanPortal}/jobs/${jobId}`;
 
-    const lines = [];
-    lines.push(`Road Express Freight is hiring a ${title} to join our ${dept} team in ${location}.`);
-    lines.push('');
-    lines.push('About the Opportunity:');
-    lines.push('As part of our rapid national linehaul expansion, this role directly drives operational excellence, logistics throughput, and customer SLA compliance across our network.');
-    lines.push('');
+    const blocks = [];
 
+    // 1. Headline
+    blocks.push(`Hiring: ${title} in ${dept} at Road Express Freight`);
+
+    // 2. Company Context & Overview
+    blocks.push(
+      `Road Express Freight is looking for a driven ${title} to join our ${dept} team in ${location} (${workMode}).\n\n` +
+      `As India's leading tech-enabled surface freight and linehaul logistics network, Road Express moves over 12,000 metric tonnes daily across 500+ commercial hubs nationwide with a 99.4% on-time linehaul SLA. In this role, you will directly influence supply chain velocity, linehaul movement, and operational excellence at scale.`
+    );
+
+    // 3. Position Snapshot
+    const snapshot = [
+      'Position Snapshot:',
+      `- Role: ${title}`,
+      `- Department: ${dept}`,
+      `- Location: ${location} (${workMode})`,
+      `- Employment Type: ${empType}`
+    ];
+    if (salaryBand) {
+      snapshot.push(`- Compensation Band: ${salaryBand}`);
+    }
+    blocks.push(snapshot.join('\n'));
+
+    // 4. Key Responsibilities
+    if (data.responsibilities_text?.trim()) {
+      const respBullets = data.responsibilities_text
+        .split('\n')
+        .map((l) => l.trim().replace(/^[-*•]\s*/, ''))
+        .filter(Boolean)
+        .slice(0, 5)
+        .map((b) => `- ${b}`);
+
+      if (respBullets.length > 0) {
+        blocks.push(`Key Responsibilities:\n${respBullets.join('\n')}`);
+      }
+    }
+
+    // 5. Candidate Profile & Qualifications
+    const reqLines = [];
+    if (data.min_experience_years !== undefined && data.min_experience_years !== null) {
+      reqLines.push(
+        data.min_experience_years > 0
+          ? `- Experience: Minimum ${data.min_experience_years} year(s) of relevant domain experience`
+          : `- Experience: Open to early career & fresh talent with strong fundamentals (0+ years)`
+      );
+    }
     if (Array.isArray(data.required_skills) && data.required_skills.length > 0) {
-      lines.push(`Key Skills: ${data.required_skills.slice(0, 6).join(' | ')}`);
+      const skills = data.required_skills.filter(Boolean);
+      if (skills.length > 0) {
+        reqLines.push(`- Core Competencies: ${skills.join(', ')}`);
+      }
     }
-    if (data.salary_band?.trim()) {
-      lines.push(`Compensation Band: ${data.salary_band.trim()}`);
+    if (data.education_qualification?.trim()) {
+      reqLines.push(`- Education: ${data.education_qualification.trim()}`);
     }
 
-    lines.push('');
-    lines.push(`Apply directly through our careers portal: ${cleanPortal}/jobs/${jobId}`);
+    if (reqLines.length > 0) {
+      blocks.push(`Candidate Profile & Qualifications:\n${reqLines.join('\n')}`);
+    }
 
-    return lines.join('\n');
+    // 6. Why Join Road Express Freight
+    blocks.push(
+      `Why Join Road Express Freight:\n` +
+      `- Build and scale mission-critical logistics systems powering national commerce\n` +
+      `- Fast-paced, merit-driven culture with high ownership and rapid career growth\n` +
+      `- Work alongside elite engineering and operations leaders transforming freight mobility`
+    );
+
+    // 7. Call To Action
+    blocks.push(
+      `Ready to shape the future of linehaul logistics?\n` +
+      `Review full role details and submit your application directly on our verified careers portal:\n\n` +
+      `Apply here: ${applyLink}`
+    );
+
+    // 8. Referral Callout
+    blocks.push(
+      `Know someone who would thrive in this role? Please tag them or share this announcement.`
+    );
+
+    return blocks.join('\n\n');
   }
 
   async listPublishedJobs(filters = {}) {

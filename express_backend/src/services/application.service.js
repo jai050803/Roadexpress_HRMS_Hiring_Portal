@@ -73,8 +73,21 @@ class ApplicationService extends BaseService {
         job,
         resumeResult.resume
       );
-      await this.appRepo.updateStatus(application.id, 'APPLIED', screeningResult.score);
+      const newStatus = screeningResult ? 'SCREENED' : 'APPLIED';
+      await this.appRepo.updateStatus(application.id, newStatus, screeningResult.score);
+      application.status = newStatus;
+      application.current_status = newStatus;
       application.match_score = screeningResult.score;
+
+      if (newStatus === 'SCREENED') {
+        await this.statusHistoryRepo.recordStatusChange({
+          applicationId: application.id,
+          oldStatus: 'APPLIED',
+          newStatus: 'SCREENED',
+          changedByType: 'system',
+          remarks: `Automated AI screening completed (${screeningResult.score}/100)`
+        });
+      }
     } catch (err) {
       console.warn('Initial screening evaluation encountered an issue:', err.message);
     }
@@ -245,7 +258,18 @@ class ApplicationService extends BaseService {
     const resume = await this.resumeService.getResumeById(application.resume_id);
 
     const result = await this.screeningService.evaluateAndSave(application, job, resume);
-    await this.appRepo.updateStatus(application.id, application.status, result.score);
+    const newStatus = application.status === 'APPLIED' ? 'SCREENED' : application.status;
+    await this.appRepo.updateStatus(application.id, newStatus, result.score);
+
+    if (application.status === 'APPLIED') {
+      await this.statusHistoryRepo.recordStatusChange({
+        applicationId: application.id,
+        oldStatus: 'APPLIED',
+        newStatus: 'SCREENED',
+        changedByType: 'system',
+        remarks: `Automated AI screening completed (${result.score}/100)`
+      });
+    }
 
     return result.screening;
   }
