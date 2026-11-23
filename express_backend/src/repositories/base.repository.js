@@ -1,12 +1,10 @@
 const { prisma } = require('../database/prisma');
-const { getPool } = require('../database/connection');
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 class BaseRepository {
-  constructor(pool = null) {
-    this.prisma = prisma;
-    this.pool = pool || getPool();
+  constructor(client = null) {
+    this.prisma = client || prisma;
   }
 
   prepareSql(text, params) {
@@ -23,21 +21,12 @@ class BaseRepository {
 
   async query(text, params = []) {
     const start = Date.now();
+    const preparedText = this.prepareSql(text, params);
     let rows;
-    try {
-      const preparedText = this.prepareSql(text, params);
-      if (params && params.length > 0) {
-        rows = await this.prisma.$queryRawUnsafe(preparedText, ...params);
-      } else {
-        rows = await this.prisma.$queryRawUnsafe(preparedText);
-      }
-    } catch (err) {
-      if (this.pool && typeof this.pool.query === 'function') {
-        const fallbackRes = await this.pool.query(text, params);
-        rows = fallbackRes.rows || [];
-      } else {
-        throw err;
-      }
+    if (params && params.length > 0) {
+      rows = await this.prisma.$queryRawUnsafe(preparedText, ...params);
+    } else {
+      rows = await this.prisma.$queryRawUnsafe(preparedText);
     }
     const duration = Date.now() - start;
 

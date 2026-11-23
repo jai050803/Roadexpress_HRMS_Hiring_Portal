@@ -1,41 +1,82 @@
 const fs = require('fs');
 const path = require('path');
 const bcrypt = require('bcryptjs');
-const { getPool, closePool } = require('./connection');
+const { prisma } = require('./prisma');
+const { closePool } = require('./connection');
+
+function splitSqlStatements(sql) {
+  const statements = [];
+  let current = '';
+  let inString = false;
+  let inBlockComment = false;
+
+  for (let i = 0; i < sql.length; i++) {
+    const char = sql[i];
+    const next = sql[i + 1];
+
+    if (inString) {
+      current += char;
+      if (char === "'" && sql[i - 1] !== '\\') {
+        inString = false;
+      }
+    } else if (inBlockComment) {
+      current += char;
+      if (char === '*' && next === '/') {
+        current += next;
+        i++;
+        inBlockComment = false;
+      }
+    } else {
+      if (char === "'") {
+        inString = true;
+        current += char;
+      } else if (char === '/' && next === '*') {
+        inBlockComment = true;
+        current += char + next;
+        i++;
+      } else if (char === '-' && next === '-') {
+        const nl = sql.indexOf('\n', i);
+        if (nl === -1) break;
+        i = nl;
+      } else if (char === ';') {
+        if (current.trim().length > 0) {
+          statements.push(current.trim());
+        }
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+  }
+  if (current.trim().length > 0) {
+    statements.push(current.trim());
+  }
+  return statements;
+}
 
 async function runMigrations() {
-  const pool = getPool();
   const schemaPath = path.join(__dirname, 'schema.sql');
   const sql = fs.readFileSync(schemaPath, 'utf8');
 
-  console.log('Running database migrations for hiring module...');
-  const client = await pool.connect();
+  console.log('Running database migrations for hiring module via Prisma...');
+  const statements = splitSqlStatements(sql);
 
-  try {
-    await client.query('BEGIN');
-    await client.query(sql);
-    await client.query('COMMIT');
-    console.log('Migrations executed successfully.');
+  for (const stmt of statements) {
+    await prisma.$executeRawUnsafe(stmt);
+  }
+  console.log('Migrations executed successfully.');
 
-    const checkAdmin = await client.query(
-      "SELECT id FROM hiring_users WHERE email = 'admin@roadexpress.com' LIMIT 1"
-    );
+  const checkAdmin = await prisma.$queryRaw`
+    SELECT id FROM hiring_users WHERE email = 'admin@roadexpress.com' LIMIT 1
+  `;
 
-    if (checkAdmin.rows.length === 0) {
-      const passwordHash = await bcrypt.hash('Admin@123456', 10);
-      await client.query(
-        `INSERT INTO hiring_users (email, password_hash, full_name, role, is_active)
-         VALUES ($1, $2, $3, $4, $5)`,
-        ['admin@roadexpress.com', passwordHash, 'HR System Administrator', 'admin', true]
-      );
-      console.log('Default admin seeded: admin@roadexpress.com / Admin@123456');
-    }
-  } catch (error) {
-    await client.query('ROLLBACK');
-    console.error('Migration failed:', error);
-    throw error;
-  } finally {
-    client.release();
+  if (!checkAdmin || checkAdmin.length === 0) {
+    const passwordHash = await bcrypt.hash('Admin@123456', 10);
+    await prisma.$executeRaw`
+      INSERT INTO hiring_users (email, password_hash, full_name, role, is_active)
+      VALUES ('admin@roadexpress.com', ${passwordHash}, 'HR System Administrator', 'admin', true)
+    `;
+    console.log('Default admin seeded: admin@roadexpress.com / Admin@123456');
   }
 }
 
@@ -45,7 +86,8 @@ if (require.main === module) {
       await closePool();
       process.exit(0);
     })
-    .catch(async () => {
+    .catch(async (err) => {
+      console.error('Migration failed:', err);
       await closePool();
       process.exit(1);
     });
