@@ -4,6 +4,7 @@ import {
   AlertCircle,
   ArrowRight,
   Briefcase,
+  CalendarClock,
   Check,
   CheckCircle,
   ChevronRight,
@@ -11,6 +12,8 @@ import {
   Eye,
   FileText,
   Filter,
+  LayoutGrid,
+  List,
   Loader2,
   Lock,
   Plus,
@@ -31,6 +34,8 @@ import ResumePreviewModal from "../components/resumes/ResumePreviewModal";
 import { useHandoff } from "../integration/handoffIntegration";
 import {
   acceptOffer,
+  bulkReject,
+  bulkShortlist,
   completeInterview,
   getJob,
   listAllJobs,
@@ -141,6 +146,9 @@ export default function Pipeline() {
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [scoreFilter, setScoreFilter] = useState<"all" | "top" | "pass">("all");
+  const [viewMode, setViewMode] = useState<"table" | "kanban">("table");
+  const [stageTab, setStageTab] = useState<string>("ALL");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
   // Drawer & Modals
   const [selectedAppId, setSelectedAppId] = useState<string | null>(null);
@@ -260,6 +268,29 @@ export default function Pipeline() {
     });
   };
 
+  const handleBulkShortlist = async () => {
+    if (selectedIds.size === 0) return;
+    try {
+      setActionLoading(true);
+      await bulkShortlist(Array.from(selectedIds));
+      setSelectedIds(new Set());
+      await loadPipelineData();
+    } catch (err: any) {
+      alert(err.message || "Failed to bulk shortlist candidates");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleBulkReject = () => {
+    if (selectedIds.size === 0) return;
+    setRejectModalState({
+      isOpen: true,
+      candidateId: Array.from(selectedIds)[0],
+      candidateName: `${selectedIds.size} selected candidates`,
+    });
+  };
+
   // Filtered Candidates
   const filteredCandidates = allCandidates.filter((c) => {
     if (searchQuery.trim()) {
@@ -277,6 +308,72 @@ export default function Pipeline() {
     }
     return true;
   });
+
+  const stageCounts = {
+    ALL: filteredCandidates.length,
+    NEEDS_REVIEW: filteredCandidates.filter(
+      (c) => c.current_status === "APPLIED" || c.current_status === "SCREENING" || c.current_status === "SCREENED"
+    ).length,
+    SHORTLISTED: filteredCandidates.filter((c) => c.current_status === "SHORTLISTED").length,
+    INTERVIEWING: filteredCandidates.filter(
+      (c) =>
+        c.current_status === "INTERVIEW_SCHEDULED" ||
+        c.current_status === "INTERVIEW_COMPLETED" ||
+        c.current_status === "INTERVIEWED"
+    ).length,
+    OFFER_HIRED: filteredCandidates.filter(
+      (c) =>
+        c.current_status === "OFFER_EXTENDED" ||
+        c.current_status === "HIRED" ||
+        c.current_status === "OFFER_ACCEPTED"
+    ).length,
+    REJECTED: filteredCandidates.filter(
+      (c) =>
+        c.current_status === "REJECTED" ||
+        c.current_status === "OFFER_DECLINED" ||
+        c.current_status === "OFFER_LAPSED"
+    ).length,
+  };
+
+  const tableCandidates = filteredCandidates.filter((c) => {
+    if (stageTab === "NEEDS_REVIEW") {
+      return c.current_status === "APPLIED" || c.current_status === "SCREENING" || c.current_status === "SCREENED";
+    }
+    if (stageTab === "SHORTLISTED") {
+      return c.current_status === "SHORTLISTED";
+    }
+    if (stageTab === "INTERVIEWING") {
+      return (
+        c.current_status === "INTERVIEW_SCHEDULED" ||
+        c.current_status === "INTERVIEW_COMPLETED" ||
+        c.current_status === "INTERVIEWED"
+      );
+    }
+    if (stageTab === "OFFER_HIRED") {
+      return (
+        c.current_status === "OFFER_EXTENDED" ||
+        c.current_status === "HIRED" ||
+        c.current_status === "OFFER_ACCEPTED"
+      );
+    }
+    if (stageTab === "REJECTED") {
+      return (
+        c.current_status === "REJECTED" ||
+        c.current_status === "OFFER_DECLINED" ||
+        c.current_status === "OFFER_LAPSED"
+      );
+    }
+    return true;
+  });
+
+  const stageTabs = [
+    { id: "ALL", label: "All candidates", count: stageCounts.ALL },
+    { id: "NEEDS_REVIEW", label: "Needs review", count: stageCounts.NEEDS_REVIEW },
+    { id: "SHORTLISTED", label: "Shortlisted", count: stageCounts.SHORTLISTED },
+    { id: "INTERVIEWING", label: "Interviewing", count: stageCounts.INTERVIEWING },
+    { id: "OFFER_HIRED", label: "Offer / Hired", count: stageCounts.OFFER_HIRED },
+    { id: "REJECTED", label: "Rejected", count: stageCounts.REJECTED },
+  ];
 
   return (
     <AppShell>
@@ -340,12 +437,42 @@ export default function Pipeline() {
           </div>
 
           <div className="flex items-center gap-2">
+            {/* View Mode Switcher */}
+            <div className="flex items-center border border-slate-200 rounded-md overflow-hidden bg-slate-100 p-0.5">
+              <button
+                type="button"
+                onClick={() => setViewMode("table")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition cursor-pointer ${
+                  viewMode === "table"
+                    ? "bg-white text-slate-900 shadow-2xs font-semibold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Table list view"
+              >
+                <List className="w-3.5 h-3.5" />
+                <span>Table</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setViewMode("kanban")}
+                className={`flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded transition cursor-pointer ${
+                  viewMode === "kanban"
+                    ? "bg-white text-slate-900 shadow-2xs font-semibold"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+                title="Kanban board view"
+              >
+                <LayoutGrid className="w-3.5 h-3.5" />
+                <span>Kanban</span>
+              </button>
+            </div>
+
             {/* Quick Search */}
             <div className="relative">
               <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2" />
               <input
                 type="text"
-                placeholder="Filter cards..."
+                placeholder="Search candidates..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-8 pr-3 py-1 text-xs rounded border border-slate-300 text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-brand-500"
@@ -371,9 +498,269 @@ export default function Pipeline() {
           </div>
         )}
 
-        {/* 8-Stage Kanban Board */}
-        <div className="flex gap-3 overflow-x-auto pb-4 pt-1 items-start min-h-[68vh]">
-          {PIPELINE_COLUMNS.map((column) => {
+        {/* View Mode: Table List (Next.js style) vs Kanban Board */}
+        {viewMode === "table" ? (
+          <div className="space-y-4">
+            {/* Stage Filter Tabs */}
+            <div className="flex items-center gap-1 border-b border-slate-200 overflow-x-auto pb-px">
+              {stageTabs.map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setStageTab(tab.id)}
+                  className={`px-3.5 py-2 text-xs font-medium border-b-2 transition flex items-center gap-2 whitespace-nowrap cursor-pointer ${
+                    stageTab === tab.id
+                      ? "border-brand-500 text-brand-600 font-semibold"
+                      : "border-transparent text-slate-500 hover:text-slate-800 hover:border-slate-300"
+                  }`}
+                >
+                  <span>{tab.label}</span>
+                  <span className="px-1.5 py-0.2 rounded text-[10px] bg-slate-100 text-slate-600 font-bold font-tabular">
+                    {tab.count}
+                  </span>
+                </button>
+              ))}
+            </div>
+
+            {/* Candidate Table */}
+            <div className="overflow-x-auto bg-white rounded-md border border-slate-200/90 shadow-2xs">
+              <table className="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr className="bg-slate-50/70 border-b border-slate-200/80 text-slate-600 font-medium text-xs">
+                    <th className="py-3 px-3.5 w-9">
+                      <input
+                        type="checkbox"
+                        checked={tableCandidates.length > 0 && selectedIds.size === tableCandidates.length}
+                        onChange={() => {
+                          if (selectedIds.size === tableCandidates.length) {
+                            setSelectedIds(new Set());
+                          } else {
+                            setSelectedIds(new Set(tableCandidates.map((c) => c.id)));
+                          }
+                        }}
+                        aria-label="Select all"
+                        className="w-3.5 h-3.5 rounded border-slate-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                      />
+                    </th>
+                    <th className="py-3 px-3.5 font-medium">Candidate</th>
+                    <th className="py-3 px-3.5 font-medium w-36">Match evaluation</th>
+                    <th className="py-3 px-3.5 font-medium">Verified competencies</th>
+                    <th className="py-3 px-3.5 font-medium w-28">Stage</th>
+                    <th className="py-3 px-3.5 font-medium w-24">Applied</th>
+                    <th className="py-3 px-3.5 text-right font-medium w-52">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {tableCandidates.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} className="py-14 text-center text-slate-400">
+                        {loading ? "Loading candidate pipeline..." : "No candidates found matching the selected filter."}
+                      </td>
+                    </tr>
+                  ) : (
+                    tableCandidates.map((c) => {
+                      const isSelected = selectedIds.has(c.id);
+                      const isHardFail = c.hard_filter_passed === false;
+                      const isTerminal = c.current_status === "REJECTED" || c.current_status === "OFFER_ACCEPTED";
+
+                      return (
+                        <tr
+                          key={c.id}
+                          className={`transition-colors ${
+                            isSelected
+                              ? "bg-brand-50/40"
+                              : isHardFail
+                              ? "bg-stone-50/50 hover:bg-stone-100/50"
+                              : "hover:bg-slate-50/70"
+                          }`}
+                        >
+                          <td className="py-3 px-3.5">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                const next = new Set(selectedIds);
+                                if (next.has(c.id)) next.delete(c.id);
+                                else next.add(c.id);
+                                setSelectedIds(next);
+                              }}
+                              aria-label={`Select ${c.candidate_name}`}
+                              className="w-3.5 h-3.5 rounded border-slate-300 text-brand-500 focus:ring-brand-500 cursor-pointer"
+                            />
+                          </td>
+                          <td className="py-3 px-3.5">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedAppId(c.id)}
+                              className="font-medium text-slate-900 hover:text-brand-600 block transition text-xs leading-snug text-left cursor-pointer"
+                            >
+                              {c.candidate_name}
+                            </button>
+                            <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-2">
+                              <span>{c.candidate_email}</span>
+                              {c.candidate_phone && (
+                                <>
+                                  <span className="text-slate-300">/</span>
+                                  <span>{c.candidate_phone}</span>
+                                </>
+                              )}
+                            </div>
+                          </td>
+                          <td className="py-3 px-3.5">
+                            <div className="space-y-1">
+                              <ScoreIndicator score={c.screening_score} size="sm" />
+                              <div className="text-[11px] leading-tight">
+                                {isHardFail ? (
+                                  <span className="text-stone-600 font-medium">Experience gap</span>
+                                ) : c.hard_filter_passed === true ? (
+                                  <span className="text-slate-500">Criteria met</span>
+                                ) : (
+                                  <span className="text-slate-400">Pending review</span>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="py-3 px-3.5 max-w-md">
+                            {c.matched_skills && c.matched_skills.length > 0 ? (
+                              <div className="text-xs text-slate-700 leading-relaxed font-sans">
+                                <span>{c.matched_skills.slice(0, 5).join(", ")}</span>
+                                {c.matched_skills.length > 5 && (
+                                  <span className="text-slate-400 font-tabular ml-1">
+                                    +{c.matched_skills.length - 5} more
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-slate-400 text-xs italic">Awaiting parse</span>
+                            )}
+                          </td>
+                          <td className="py-3 px-3.5 whitespace-nowrap">
+                            <StatusBadge status={c.current_status} type="application" />
+                          </td>
+                          <td className="py-3 px-3.5 text-slate-500 whitespace-nowrap font-tabular text-xs">
+                            {c.applied_at ? new Date(c.applied_at).toLocaleDateString("en-IN", { day: "numeric", month: "short" }) : "-"}
+                          </td>
+                          <td className="py-3 px-3.5 text-right whitespace-nowrap">
+                            <div className="inline-flex items-center gap-1.5 justify-end">
+                              {c.resume_id && (
+                                <button
+                                  type="button"
+                                  onClick={() => setPreviewResumeState({ isOpen: true, resumeId: c.resume_id, candidateName: c.candidate_name })}
+                                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-white border border-slate-200 text-slate-700 hover:text-brand-600 transition cursor-pointer"
+                                  title="Preview PDF Resume inline"
+                                >
+                                  PDF
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedAppId(c.id)}
+                                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded transition cursor-pointer"
+                                title="View candidate dossier"
+                              >
+                                <Eye className="w-3.5 h-3.5" />
+                              </button>
+                              {(c.current_status === "APPLIED" || c.current_status === "SCREENING") && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleShortlist(c)}
+                                  disabled={actionLoading}
+                                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-brand-500 text-white hover:bg-brand-600 transition cursor-pointer shadow-2xs"
+                                >
+                                  Shortlist
+                                </button>
+                              )}
+                              {c.current_status === "SHORTLISTED" && (
+                                <Link
+                                  to={`/interviews?candidate_id=${c.id}`}
+                                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-indigo-600 text-white hover:bg-indigo-700 transition"
+                                >
+                                  Schedule
+                                </Link>
+                              )}
+                              {c.current_status === "INTERVIEW_COMPLETED" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleMakeOffer(c)}
+                                  disabled={actionLoading}
+                                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-amber-600 text-white hover:bg-amber-700 transition cursor-pointer"
+                                >
+                                  Make Offer
+                                </button>
+                              )}
+                              {c.current_status === "OFFER_EXTENDED" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleAcceptOffer(c)}
+                                  disabled={actionLoading}
+                                  className="px-2 py-1 text-[11px] font-medium rounded-md bg-emerald-600 text-white hover:bg-emerald-700 transition cursor-pointer"
+                                >
+                                  Hire
+                                </button>
+                              )}
+                              {c.current_status === "HIRED" && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleHandoffClick(c)}
+                                  className="px-2 py-1 text-[10px] font-semibold rounded-md bg-emerald-700 text-white hover:bg-emerald-800 transition cursor-pointer"
+                                  title="Transfer to Onboarding"
+                                >
+                                  Handoff
+                                </button>
+                              )}
+                              {!isTerminal && c.current_status !== "HIRED" && (
+                                <button
+                                  type="button"
+                                  onClick={() => setRejectModalState({ isOpen: true, candidateId: c.id, candidateName: c.candidate_name })}
+                                  disabled={actionLoading}
+                                  className="px-2 py-1 text-[11px] font-medium rounded-md text-slate-500 hover:text-stone-800 hover:bg-slate-100 transition cursor-pointer"
+                                >
+                                  Reject
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Floating Bulk Action Bar */}
+            {selectedIds.size > 0 && (
+              <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 text-white px-5 py-2.5 rounded-lg shadow-xl flex items-center gap-4 z-40 text-xs animate-in fade-in">
+                <span className="font-medium">{selectedIds.size} candidate(s) selected</span>
+                <button
+                  type="button"
+                  onClick={handleBulkShortlist}
+                  disabled={actionLoading}
+                  className="px-3 py-1 bg-brand-500 hover:bg-brand-600 text-white font-medium rounded transition cursor-pointer"
+                >
+                  Bulk Shortlist
+                </button>
+                <button
+                  type="button"
+                  onClick={handleBulkReject}
+                  disabled={actionLoading}
+                  className="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-white font-medium rounded transition border border-slate-700 cursor-pointer"
+                >
+                  Bulk Reject
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedIds(new Set())}
+                  className="text-slate-400 hover:text-white cursor-pointer ml-1"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="flex gap-3 overflow-x-auto pb-4 pt-1 items-start min-h-[68vh]">
+            {PIPELINE_COLUMNS.map((column) => {
             const columnCandidates = filteredCandidates.filter((c) =>
               column.statuses.includes(c.current_status as ApplicationStatus)
             );
@@ -558,7 +945,8 @@ export default function Pipeline() {
             );
           })}
         </div>
-      </main>
+      )}
+    </main>
 
       {/* Candidate Profile Slide-over Drawer */}
       <CandidateProfileDrawer

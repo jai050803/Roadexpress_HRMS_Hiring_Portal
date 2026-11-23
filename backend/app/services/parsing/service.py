@@ -30,7 +30,7 @@ class ParsingService:
         5. Normalizes skills to lowercase.
         6. Updates resumes table with parsed_json, parse_status = 'done', parsed_at = now().
         7. On failure: sets parse_status = 'failed', parse_error = error message, and re-raises.
-        * Never modifies the applications table directly — only resumes.
+        * Never modifies the applications table directly  -  only resumes.
         """
         if session is not None:
             return await cls._execute_parse(resume_id, session)

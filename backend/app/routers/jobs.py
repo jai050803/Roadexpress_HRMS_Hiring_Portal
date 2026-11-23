@@ -166,7 +166,7 @@ async def preview_job_content(
     """
     HR endpoint: Deterministically generate formatted Job Description and LinkedIn
     post copy using defined frameworks without creating or modifying a job role.
-    Pure backend business logic — no frontend logic required.
+    Pure backend business logic  -  no frontend logic required.
     """
     portal_url = settings.CANDIDATE_PORTAL_URL.rstrip("/")
     jd_text = generate_jd_text_engine(

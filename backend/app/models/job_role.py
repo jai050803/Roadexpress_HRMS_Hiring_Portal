@@ -39,7 +39,7 @@ class JobRole(Base):
     location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     work_mode: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # remote | onsite | hybrid
 
-    # JD fields (optional — renderer omits missing sections, never prints "N/A")
+    # JD fields (optional  -  renderer omits missing sections, never prints "N/A")
     education_qualification: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     min_experience_years: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     required_skills: Mapped[Optional[List[str]]] = mapped_column(ARRAY(Text), nullable=True)
@@ -58,7 +58,7 @@ class JobRole(Base):
     # Status
     status: Mapped[str] = mapped_column(String(50), default="draft", server_default="draft", nullable=False)  # draft | published | closed
 
-    # LinkedIn copy (not API — HR copies manually)
+    # LinkedIn copy (not API  -  HR copies manually)
     linkedin_post_copy: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     linkedin_posted: Mapped[bool] = mapped_column(Boolean, default=False, server_default="false", nullable=False)
     linkedin_posted_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)

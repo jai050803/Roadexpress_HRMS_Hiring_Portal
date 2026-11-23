@@ -1,3 +1,5 @@
+const jwt = require('jsonwebtoken');
+const config = require('../config');
 const BaseService = require('./base.service');
 const { verifyMagicBytes } = require('../middleware/upload.middleware');
 
@@ -90,11 +92,15 @@ class ResumeService extends BaseService {
 
   async getPresignedUrl(id, expiresIn = 900) {
     const resume = await this.getResumeById(id);
-    const downloadUrl = await this.storage.getDownloadUrl(resume.file_path, expiresIn);
+    const token = jwt.sign(
+      { id: resume.id, role: 'recruiter', purpose: 'resume_download' },
+      config.jwt.secret,
+      { expiresIn: `${expiresIn}s` }
+    );
     return {
       resume_id: resume.id,
       file_name: resume.original_filename || resume.file_name,
-      download_url: downloadUrl,
+      download_url: `/api/v1/hiring/resumes/${resume.id}/file?token=${token}`,
       expires_in_seconds: expiresIn
     };
   }

@@ -50,7 +50,7 @@ def get_interview_invite_email(
     formatted_dt = _format_datetime_ist(scheduled_at) if isinstance(scheduled_at, datetime) else str(scheduled_at)
     mode_detail = _format_mode_detail(mode, meeting_link, location)
 
-    subject = f"Interview Scheduled — {job_title} at Road Express Freight"
+    subject = f"Interview Scheduled  -  {job_title} at Road Express Freight"
     body = (
         f"Dear {first_name},\n\n"
         f"We are pleased to invite you for an interview for the {job_title} position at Road Express Freight.\n\n"
@@ -80,7 +80,7 @@ def get_interview_rescheduled_email(
     formatted_dt = _format_datetime_ist(new_scheduled_at) if isinstance(new_scheduled_at, datetime) else str(new_scheduled_at)
     mode_detail = _format_mode_detail(mode, meeting_link, location)
 
-    subject = f"Interview Rescheduled — {job_title} at Road Express Freight"
+    subject = f"Interview Rescheduled  -  {job_title} at Road Express Freight"
     body = (
         f"Dear {first_name},\n\n"
         f"Your interview has been rescheduled to {formatted_dt}.\n\n"
@@ -103,7 +103,7 @@ def get_interview_cancelled_email(
 ) -> Dict[str, str]:
     first_name = candidate_name.split()[0] if candidate_name else "Candidate"
 
-    subject = f"Interview Update — {job_title} at Road Express Freight"
+    subject = f"Interview Update  -  {job_title} at Road Express Freight"
     body = (
         f"Dear {first_name},\n\n"
         f"We are writing to let you know that your scheduled interview for the {job_title} position at Road Express Freight has been cancelled.\n\n"
@@ -119,15 +119,15 @@ def get_interview_cancelled_email(
 # Template registry mapping for easy reference
 EMAIL_TEMPLATES = {
     "interview_invite": {
-        "subject": "Interview Scheduled — {job_title} at Road Express Freight",
+        "subject": "Interview Scheduled  -  {job_title} at Road Express Freight",
         "render": get_interview_invite_email,
     },
     "interview_rescheduled": {
-        "subject": "Interview Rescheduled — {job_title} at Road Express Freight",
+        "subject": "Interview Rescheduled  -  {job_title} at Road Express Freight",
         "render": get_interview_rescheduled_email,
     },
     "interview_cancelled": {
-        "subject": "Interview Update — {job_title} at Road Express Freight",
+        "subject": "Interview Update  -  {job_title} at Road Express Freight",
         "render": get_interview_cancelled_email,
     },
 }

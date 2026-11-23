@@ -164,8 +164,8 @@ class ApplicationService extends BaseService {
   }
 
   async getApplicationDetails(id) {
-    const application = await this.appRepo.findById(id);
-    if (!application) {
+    const app = await this.appRepo.findById(id);
+    if (!app) {
       const error = new Error('Application not found');
       error.statusCode = 404;
       error.code = 'APPLICATION_NOT_FOUND';
@@ -174,8 +174,56 @@ class ApplicationService extends BaseService {
 
     const statusHistory = await this.statusHistoryRepo.findByApplicationId(id);
 
+    const candidate = {
+      id: app.candidate_id,
+      name: app.candidate_name,
+      email: app.candidate_email,
+      phone: app.candidate_phone,
+      location: app.candidate_location,
+      current_title: app.candidate_title,
+      total_experience_years: app.candidate_experience ? parseFloat(app.candidate_experience) : 0,
+      skills: app.candidate_skills || []
+    };
+
+    const resume = app.resume_id ? {
+      id: app.resume_id,
+      application_id: app.id,
+      candidate_id: app.candidate_id,
+      original_filename: app.resume_filename,
+      file_url: app.resume_url,
+      parsed_json: app.resume_parsed_data
+    } : null;
+
+    const screeningResult = (app.screening_score !== null && app.screening_score !== undefined) ? {
+      id: app.id,
+      score: Number(app.screening_score),
+      overall_score: Number(app.screening_score),
+      matched_skills: app.screening_matched_skills || [],
+      missing_skills: app.screening_missing_skills || [],
+      llm_rationale: app.screening_rationale,
+      summary: app.screening_rationale,
+      hard_filter_passed: app.screening_hard_filter_passed !== null ? Boolean(app.screening_hard_filter_passed) : true
+    } : null;
+
+    const job = {
+      id: app.job_id,
+      title: app.job_title,
+      department: app.job_department || app.department,
+      location: app.job_location,
+      salary_band: app.job_salary_band
+    };
+
     return {
-      ...application,
+      ...app,
+      job_role_id: app.job_id,
+      department: app.job_department || app.department,
+      screening_score: app.screening_score !== null ? Number(app.screening_score) : null,
+      match_score: app.match_score !== null ? parseFloat(app.match_score) : null,
+      candidate,
+      resume,
+      screening_result: screeningResult,
+      job,
+      status_history: statusHistory,
       timeline: statusHistory
     };
   }

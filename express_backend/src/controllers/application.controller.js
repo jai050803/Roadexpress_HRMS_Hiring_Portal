@@ -91,16 +91,25 @@ class ApplicationController extends BaseController {
 
   listApplications = async (req, res, next) => {
     try {
-      const { job_id, status, min_score, search, page, limit } = req.query;
+      const { job_id, job_role_id, status, min_score, search, page, limit } = req.query;
+      const targetJobId = job_id || job_role_id || null;
       const result = await this.applicationService.listApplications({
-        jobId: job_id,
+        jobId: targetJobId,
         status,
         minScore: min_score,
         search,
         page,
         limit
       });
-      return this.sendSuccess(res, result, 'Applications retrieved');
+      return this.sendSuccess(res, {
+        items: result.applications,
+        total: result.pagination.total,
+        page: result.pagination.page,
+        limit: result.pagination.limit,
+        total_pages: result.pagination.totalPages,
+        applications: result.applications,
+        pagination: result.pagination
+      }, 'Applications retrieved');
     } catch (error) {
       next(error);
     }

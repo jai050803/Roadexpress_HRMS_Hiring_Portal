@@ -39,8 +39,8 @@ logger = logging.getLogger(__name__)
 STATUS_MAPPING: Dict[str, Dict[str, Any]] = {
     "APPLIED": {"label": "Application Received", "stage": 1},
     "SCREENED": {"label": "Under Review", "stage": 2},
-    "SHORTLISTED": {"label": "Shortlisted — Interview Details Sent", "stage": 3},
-    "INTERVIEW_SCHEDULED": {"label": "Shortlisted — Interview Details Sent", "stage": 3},
+    "SHORTLISTED": {"label": "Shortlisted  -  Interview Details Sent", "stage": 3},
+    "INTERVIEW_SCHEDULED": {"label": "Shortlisted  -  Interview Details Sent", "stage": 3},
     "INTERVIEWED": {"label": "Under Review", "stage": 2},
     "OFFERED": {"label": "Offer Extended", "stage": 3},
     "OFFER_ACCEPTED": {"label": "Welcome to Road Express", "stage": 4},

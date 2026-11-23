@@ -48,7 +48,7 @@ def upgrade() -> None:
             "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_screening_results_score ON screening_results(score DESC);"
         )
 
-        # JSONB skill search (most critical — without this, every skill filter is a full table scan)
+        # JSONB skill search (most critical  -  without this, every skill filter is a full table scan)
         op.execute(
             "CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_resumes_parsed_json_skills ON resumes USING GIN((parsed_json -> 'skills'));"
         )

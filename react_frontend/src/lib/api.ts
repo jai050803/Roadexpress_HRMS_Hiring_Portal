@@ -1,6 +1,7 @@
 import { http } from "../integration/httpIntegration";
 import {
   ApplicationDetail,
+  ApplicationListItem,
   ApplicationListResponse,
   BulkActionResponse,
   CandidateInfo,
@@ -81,7 +82,7 @@ export async function listAllJobs(
   if (department) params.department = department;
 
   try {
-    const res = await http.get<any>("/jobs", params);
+    const res = await http.get<any>("/jobs/all", params).catch(() => http.get<any>("/jobs", params));
     if (Array.isArray(res)) return res;
     if (res?.jobs && Array.isArray(res.jobs)) return res.jobs;
     if (res?.items && Array.isArray(res.items)) return res.items;
@@ -143,18 +144,39 @@ export async function listApplications(
   params: ListApplicationsParams = {}
 ): Promise<ApplicationListResponse> {
   try {
-    const res = await http.get<any>("/applications", params);
-    if (res?.items) return res;
-    if (Array.isArray(res)) {
-      return {
-        items: res,
-        total: res.length,
-        page: params.page || 1,
-        limit: params.limit || 50,
-        pages: 1,
-      };
+    const queryParams: Record<string, any> = { ...params };
+    if (params.job_role_id) {
+      queryParams.job_id = params.job_role_id;
     }
-    return { items: [], total: 0, page: 1, limit: 50, pages: 1 };
+    const res = await http.get<any>("/applications", queryParams);
+    const items = res?.items || res?.applications || (Array.isArray(res) ? res : []);
+    const total = res?.total ?? res?.pagination?.total ?? items.length;
+    const page = res?.page ?? res?.pagination?.page ?? params.page ?? 1;
+    const limit = res?.limit ?? res?.pagination?.limit ?? params.limit ?? 50;
+    const pages = res?.total_pages ?? res?.pagination?.totalPages ?? Math.ceil(total / limit) ?? 1;
+
+    const normalizedItems: ApplicationListItem[] = items.map((item: any) => ({
+      ...item,
+      job_role_id: item.job_role_id || item.job_id,
+      job_id: item.job_id || item.job_role_id,
+      department: item.department || item.job_department,
+      job_department: item.job_department || item.department,
+      screening_score: item.screening_score !== undefined && item.screening_score !== null
+        ? Number(item.screening_score)
+        : (item.match_score !== undefined && item.match_score !== null ? Math.round(Number(item.match_score)) : undefined),
+      match_score: item.match_score !== undefined && item.match_score !== null ? Number(item.match_score) : undefined,
+      resume_id: item.resume_id || item.resume?.id,
+      resume_file_name: item.resume_file_name || item.resume_filename || item.resume?.original_filename,
+    }));
+
+    return {
+      items: normalizedItems,
+      total,
+      page,
+      limit,
+      pages,
+      total_pages: pages
+    };
   } catch (err) {
     return { items: [], total: 0, page: 1, limit: 50, pages: 1 };
   }

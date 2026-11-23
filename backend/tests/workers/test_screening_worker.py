@@ -168,7 +168,7 @@ def test_screening_worker_gemini_failure_fallback(test_role: JobRole):
     """
     If Gemini fails / exhausts retries:
     Celery task writes fallback result (score=0, hard_filter_passed=False,
-    llm_rationale='Screening failed — manual review required')
+    llm_rationale='Screening failed  -  manual review required')
     and still moves application from APPLIED -> SCREENED.
     """
     app_id = asyncio.run(

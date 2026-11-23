@@ -103,7 +103,7 @@ async def test_publish_job(client: AsyncClient, hr_auth_headers: dict):
 async def test_close_job(client: AsyncClient, hr_auth_headers: dict):
     """Closing a job transitions status to closed."""
     payload = {
-        "title": "Data Analyst — Logistics",
+        "title": "Data Analyst  -  Logistics",
         "department": "Data & Analytics",
     }
     create_res = await client.post("/v1/jobs", json=payload, headers=hr_auth_headers)

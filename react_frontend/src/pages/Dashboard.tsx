@@ -650,7 +650,7 @@ export default function Dashboard() {
                   </div>
                 ) : (
                   openRoles.slice(0, 5).map((role) => {
-                    const roleApps = applications.filter((a) => a.job_role_id === role.id);
+                    const roleApps = applications.filter((a) => a.job_role_id === role.id || a.job_id === role.id);
                     const roleShortlisted = roleApps.filter((a) => a.current_status === "SHORTLISTED").length;
                     const roleInReview = roleApps.filter(
                       (a) => a.current_status === "SCREENED" || a.current_status === "APPLIED"
@@ -681,7 +681,7 @@ export default function Dashboard() {
 
                         <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 font-tabular">
                           <span>
-                            <strong>{role.applications_count}</strong> applied
+                            <strong>{role.applications_count ?? (role as any).calculated_applications_count ?? roleApps.length}</strong> applied
                           </span>
                           <span>·</span>
                           <span className="text-amber-700 font-medium">

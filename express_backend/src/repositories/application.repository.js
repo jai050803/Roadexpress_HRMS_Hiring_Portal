@@ -32,6 +32,7 @@ class ApplicationRepository extends BaseRepository {
   async findById(id) {
     const sql = `
       SELECT a.*,
+             a.job_id as job_role_id,
              c.name as candidate_name,
              c.email as candidate_email,
              c.phone as candidate_phone,
@@ -41,6 +42,7 @@ class ApplicationRepository extends BaseRepository {
              c.total_experience_years as candidate_experience,
              j.title as job_title,
              j.department as job_department,
+             j.department as department,
              j.location as job_location,
              j.salary_band as job_salary_band,
              j.min_salary as job_min_salary,
@@ -92,14 +94,21 @@ class ApplicationRepository extends BaseRepository {
   async listApplications({ jobId = null, status = null, minScore = null, search = null, limit = 50, offset = 0 } = {}) {
     let sql = `
       SELECT a.id, a.reference_number, a.source, a.status, a.current_status, a.match_score,
+             a.resume_id,
              a.created_at as applied_at, a.updated_at,
              c.id as candidate_id, c.name as candidate_name, c.email as candidate_email,
              c.phone as candidate_phone, c.current_title as candidate_title,
-             j.id as job_id, j.title as job_title, j.department as job_department,
-             s.hard_filter_passed, s.matched_skills, s.missing_skills
+             j.id as job_id, j.id as job_role_id, j.title as job_title, j.department as job_department, j.department as department,
+             r.original_filename as resume_file_name, r.original_filename as resume_filename,
+             COALESCE(s.score, ROUND(a.match_score)::int) as screening_score,
+             s.hard_filter_passed,
+             COALESCE(s.matched_skills, '{}') as matched_skills,
+             COALESCE(s.missing_skills, '{}') as missing_skills,
+             s.llm_rationale as screening_rationale
       FROM ${this.tableName} a
       INNER JOIN hiring_candidates c ON c.id = a.candidate_id
       INNER JOIN hiring_jobs j ON j.id = a.job_id
+      LEFT JOIN hiring_resumes r ON r.id = a.resume_id
       LEFT JOIN hiring_screening_results s ON s.application_id = a.id
       WHERE 1=1
     `;
@@ -129,7 +138,12 @@ class ApplicationRepository extends BaseRepository {
     params.push(limit, offset);
 
     const result = await this.query(sql, params);
-    return result.rows;
+    return result.rows.map((row) => ({
+      ...row,
+      match_score: row.match_score !== null ? parseFloat(row.match_score) : null,
+      screening_score: row.screening_score !== null ? parseInt(row.screening_score, 10) : null,
+      hard_filter_passed: row.hard_filter_passed !== null ? Boolean(row.hard_filter_passed) : true
+    }));
   }
 
   async countApplications({ jobId = null, status = null, minScore = null, search = null } = {}) {

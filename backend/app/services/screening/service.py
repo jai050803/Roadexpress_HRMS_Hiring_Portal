@@ -30,7 +30,7 @@ class ScreeningService:
         5. Validates score (0-100 integer).
         6. Writes to screening_results table.
         7. Transitions application APPLIED -> SCREENED.
-        * Advisory only — never calls shortlist or reject.
+        * Advisory only  -  never calls shortlist or reject.
         """
         if session is not None:
             return await cls._execute_screen(application_id, session)
@@ -88,7 +88,7 @@ class ScreeningService:
         min_exp = job_role.min_experience_years
         cand_exp = parsed_resume.get("total_experience_years")
 
-        if screening_data.get("llm_rationale") == "Screening failed — manual review required":
+        if screening_data.get("llm_rationale") == "Screening failed  -  manual review required":
             hard_filter_passed = False
         else:
             hard_filter_passed = True
@@ -163,7 +163,7 @@ class ScreeningService:
     ) -> ScreeningResult:
         """
         Writes required fallback screening result when Gemini validation fails after 3 retries:
-        score = 0, hard_filter_passed = false, llm_rationale = 'Screening failed — manual review required'
+        score = 0, hard_filter_passed = false, llm_rationale = 'Screening failed  -  manual review required'
         and still transitions the application to SCREENED.
         """
         if session is not None:
@@ -202,7 +202,7 @@ class ScreeningService:
             score=0,
             matched_skills=[],
             missing_skills=req_skills,
-            llm_rationale="Screening failed — manual review required",
+            llm_rationale="Screening failed  -  manual review required",
             hard_filter_passed=False,
             decided_at=datetime.now(timezone.utc),
         )

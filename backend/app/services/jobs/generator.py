@@ -1,6 +1,6 @@
 """
 Framework-driven Job Description & LinkedIn Post Generation Engine.
-Road Express Freight HRMS — Pure programmatic / rule-based framework (No AI).
+Road Express Freight HRMS  -  Pure programmatic / rule-based framework (No AI).
 
 Follows:
 1. Executive JD Framework: Structured metadata, company mission, role purpose,

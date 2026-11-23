@@ -191,11 +191,11 @@ def call_gemini_screening(
 
     logger.error(f"Gemini screening failed after {max_retries} retries ({last_error}). Triggering required fallback result.")
     # Per constraint:
-    # "if validation fails after 3 retries, write score = 0, hard_filter_passed = false, llm_rationale = 'Screening failed — manual review required' and still transition to SCREENED"
+    # "if validation fails after 3 retries, write score = 0, hard_filter_passed = false, llm_rationale = 'Screening failed  -  manual review required' and still transition to SCREENED"
     return {
         "score": 0,
         "matched_skills": [],
         "missing_skills": [s.lower().strip() for s in (required_skills or [])],
-        "llm_rationale": "Screening failed — manual review required",
+        "llm_rationale": "Screening failed  -  manual review required",
         "hard_filter_passed": False,
     }

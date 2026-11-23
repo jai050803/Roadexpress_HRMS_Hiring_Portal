@@ -33,8 +33,14 @@ class AuthIntegration {
     }
 
     const authHeader = req.headers.authorization;
+    let token = null;
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
+      token = authHeader.substring(7);
+    } else if (req.query && req.query.token) {
+      token = req.query.token;
+    }
+
+    if (token) {
       try {
         const decoded = jwt.verify(token, this.jwtSecret);
         return {

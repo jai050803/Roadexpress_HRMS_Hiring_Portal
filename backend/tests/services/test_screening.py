@@ -264,7 +264,7 @@ async def test_screening_malformed_json_fallback_moves_to_screened(test_role):
     """
     Gemini returns malformed JSON -> after 3 retries, fallback result written:
     score = 0, hard_filter_passed = false,
-    llm_rationale = 'Screening failed — manual review required',
+    llm_rationale = 'Screening failed  -  manual review required',
     and application still moves to SCREENED.
     """
     async with TestSessionLocal() as session:
@@ -316,7 +316,7 @@ async def test_screening_malformed_json_fallback_moves_to_screened(test_role):
     # Verification: required fallback output
     assert result.score == 0
     assert result.hard_filter_passed is False
-    assert result.llm_rationale == "Screening failed — manual review required"
+    assert result.llm_rationale == "Screening failed  -  manual review required"
 
     # Verification: application still transitions to SCREENED
     async with TestSessionLocal() as session:
