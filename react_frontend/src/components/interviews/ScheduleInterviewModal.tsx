@@ -172,7 +172,7 @@ export default function ScheduleInterviewModal({
                   <option value="">Select Candidate</option>
                   {shortlistedApps.map((a) => (
                     <option key={a.id} value={a.id}>
-                      {a.candidate_name} — {a.job_title}
+                      {a.candidate_name} - {a.job_title}
                     </option>
                   ))}
                 </select>
@@ -271,7 +271,7 @@ export default function ScheduleInterviewModal({
               </label>
               <input
                 type="text"
-                placeholder="e.g. Bangalore HQ — Meeting Room 3A"
+                placeholder="e.g. Bangalore HQ - Meeting Room 3A"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
                 className="w-full px-3 py-1.5 text-xs rounded border border-slate-300 text-slate-900 placeholder:text-slate-400 bg-white"

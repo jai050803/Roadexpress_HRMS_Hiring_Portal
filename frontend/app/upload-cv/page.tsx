@@ -85,6 +85,7 @@ export default function UploadCvPage() {
     }
 
     const formData = new FormData();
+    formData.append("job_id", selectedRoleId);
     formData.append("job_role_id", selectedRoleId);
     formData.append("name", name.trim());
     formData.append("email", email.trim());
@@ -198,7 +199,7 @@ export default function UploadCvPage() {
                   >
                     {publishedJobs.map((job) => (
                       <option key={job.id} value={job.id}>
-                        {job.title} — {job.department} ({job.location || "Corporate HQ"})
+                        {job.title} - {job.department} ({job.location || "Corporate HQ"})
                       </option>
                     ))}
                   </select>
@@ -278,7 +279,7 @@ export default function UploadCvPage() {
                             {resumeFile.name}
                           </span>
                           <span className="text-xs text-slate-400 font-tabular">
-                            {Math.round(resumeFile.size / 1024)} KB — click to replace
+                            {Math.round(resumeFile.size / 1024)} KB - click to replace
                           </span>
                         </div>
                       ) : (

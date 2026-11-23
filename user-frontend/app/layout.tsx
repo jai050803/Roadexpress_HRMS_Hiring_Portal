@@ -3,7 +3,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "Road Express Careers — Join Our Team",
+  title: "Road Express Careers - Join Our Team",
   description: "Browse open roles and apply to Road Express logistics company.",
 };
 

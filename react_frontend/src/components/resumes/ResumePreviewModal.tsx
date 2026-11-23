@@ -91,7 +91,7 @@ export default function ResumePreviewModal({
             <FileText className="w-4 h-4 text-brand-500 shrink-0" />
             <div className="truncate">
               <span className="text-xs font-semibold text-slate-900 truncate block">
-                {candidateName ? `${candidateName} — Resume Preview` : fileName}
+                {candidateName ? `${candidateName} - Resume Preview` : fileName}
               </span>
               <span className="text-[11px] text-slate-400 font-mono">
                 PDF Document · {zoomLevel}% Zoom

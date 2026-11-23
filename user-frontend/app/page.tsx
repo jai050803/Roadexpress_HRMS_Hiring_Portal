@@ -81,7 +81,7 @@ const PROCESS_STEPS = [
   {
     step: "01",
     title: "Submit CV in 2 Minutes",
-    desc: "Apply with your PDF resume. No tedious 50-field forms — we extract relevant experience automatically.",
+    desc: "Apply with your PDF resume. No tedious 50-field forms - we extract relevant experience automatically.",
   },
   {
     step: "02",

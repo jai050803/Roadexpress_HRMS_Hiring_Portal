@@ -233,7 +233,7 @@ export default function ScheduleInterviewModal({
                   <option value="">-- Choose candidate application --</option>
                   {shortlistedApps.map((app) => (
                     <option key={app.id} value={app.id}>
-                      {app.candidate_name} ({app.job_title}) — Ref: {app.reference_number}
+                      {app.candidate_name} ({app.job_title}) - Ref: {app.reference_number}
                     </option>
                   ))}
                 </select>

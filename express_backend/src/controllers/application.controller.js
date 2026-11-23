@@ -11,6 +11,7 @@ class ApplicationController extends BaseController {
       const file = req.file;
       const {
         job_id,
+        job_role_id,
         name,
         email,
         phone,
@@ -23,11 +24,13 @@ class ApplicationController extends BaseController {
         source
       } = req.body;
 
+      const effectiveJobId = job_id || job_role_id || req.body.jobId;
+
       if (!file) {
         return this.sendError(res, 'Resume file is required to submit an application', 400, null, 'RESUME_REQUIRED');
       }
 
-      if (!job_id) {
+      if (!effectiveJobId) {
         return this.sendError(res, 'Job ID is required', 400, null, 'JOB_ID_REQUIRED');
       }
 
@@ -55,7 +58,7 @@ class ApplicationController extends BaseController {
       };
 
       const result = await this.applicationService.applyForJob({
-        jobId: job_id,
+        jobId: effectiveJobId,
         candidateData,
         resumeFile: file,
         source: source || 'portal'
@@ -193,7 +196,7 @@ class ApplicationController extends BaseController {
       const { remarks } = req.body;
       const changedById = req.hiringUser ? req.hiringUser.id : null;
       const result = await this.applicationService.updateStatus(id, 'HIRED', { changedById, remarks });
-      return this.sendSuccess(res, result, 'Offer accepted — candidate hired');
+      return this.sendSuccess(res, result, 'Offer accepted - candidate hired');
     } catch (error) {
       next(error);
     }

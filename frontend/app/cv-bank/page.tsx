@@ -511,7 +511,7 @@ function CVBankContent() {
                             )}
                           </div>
                         ) : (
-                          <span className="text-slate-400 text-xs">—</span>
+                          <span className="text-slate-400 text-xs">-</span>
                         )}
                       </td>
 

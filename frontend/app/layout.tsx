@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Road Express — HR Admin Portal",
+  title: "Road Express - HR Admin Portal",
   description: "Internal Recruitment and Pipeline Management Portal",
 };
 

@@ -124,6 +124,7 @@ export default function UploadResume() {
     }
 
     const formData = new FormData();
+    formData.append("job_id", selectedRoleId);
     formData.append("job_role_id", selectedRoleId);
     formData.append("name", name.trim());
     formData.append("email", email.trim());
@@ -239,7 +240,7 @@ export default function UploadResume() {
                   >
                     {publishedJobs.map((j) => (
                       <option key={j.id} value={j.id}>
-                        {j.title} — {j.department} ({j.work_mode || "Hybrid"})
+                        {j.title} - {j.department} ({j.work_mode || "Hybrid"})
                       </option>
                     ))}
                   </select>

@@ -776,7 +776,7 @@ export default function CandidateProfilePage() {
                                     <span className="font-semibold text-slate-800 font-tabular">
                                       {latestFeedback.technical_rating
                                         ? `${latestFeedback.technical_rating}/5`
-                                        : "—"}
+                                        : "-"}
                                     </span>
                                   </div>
                                   <div>
@@ -784,7 +784,7 @@ export default function CandidateProfilePage() {
                                     <span className="font-semibold text-slate-800 font-tabular">
                                       {latestFeedback.communication_rating
                                         ? `${latestFeedback.communication_rating}/5`
-                                        : "—"}
+                                        : "-"}
                                     </span>
                                   </div>
                                   <div>
@@ -792,7 +792,7 @@ export default function CandidateProfilePage() {
                                     <span className="font-semibold text-slate-800 font-tabular">
                                       {latestFeedback.culture_rating
                                         ? `${latestFeedback.culture_rating}/5`
-                                        : "—"}
+                                        : "-"}
                                     </span>
                                   </div>
                                 </div>

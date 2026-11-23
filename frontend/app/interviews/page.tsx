@@ -452,7 +452,7 @@ export default function InterviewsPage() {
                                 {interview.candidate_name || "Candidate"}
                               </span>
                               <span className="text-slate-500 text-[11px] block mt-0.5">
-                                {interview.candidate_email || "—"}
+                                {interview.candidate_email || "-"}
                               </span>
                             </td>
 
@@ -593,7 +593,7 @@ export default function InterviewsPage() {
                                 <div className="max-w-3xl bg-white border border-slate-200 rounded-md p-5 shadow-2xs space-y-4">
                                   <div className="flex items-center justify-between pb-3 border-b border-slate-100">
                                     <h4 className="font-semibold text-slate-900 text-xs">
-                                      Add Interview Feedback — {interview.candidate_name}
+                                      Add Interview Feedback - {interview.candidate_name}
                                     </h4>
                                     <button
                                       type="button"
@@ -783,19 +783,19 @@ export default function InterviewsPage() {
                                     <div>
                                       <span className="text-slate-400 block">Technical:</span>
                                       <span className="font-semibold text-slate-800">
-                                        {latestFeedback.technical_rating ? `${latestFeedback.technical_rating}/5` : "—"}
+                                        {latestFeedback.technical_rating ? `${latestFeedback.technical_rating}/5` : "-"}
                                       </span>
                                     </div>
                                     <div>
                                       <span className="text-slate-400 block">Communication:</span>
                                       <span className="font-semibold text-slate-800">
-                                        {latestFeedback.communication_rating ? `${latestFeedback.communication_rating}/5` : "—"}
+                                        {latestFeedback.communication_rating ? `${latestFeedback.communication_rating}/5` : "-"}
                                       </span>
                                     </div>
                                     <div>
                                       <span className="text-slate-400 block">Culture:</span>
                                       <span className="font-semibold text-slate-800">
-                                        {latestFeedback.culture_rating ? `${latestFeedback.culture_rating}/5` : "—"}
+                                        {latestFeedback.culture_rating ? `${latestFeedback.culture_rating}/5` : "-"}
                                       </span>
                                     </div>
                                   </div>

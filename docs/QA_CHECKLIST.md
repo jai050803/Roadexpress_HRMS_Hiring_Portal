@@ -1,10 +1,10 @@
-# Road Express HRMS & Hiring Portal — Comprehensive QA Manual Test Checklist
+# Road Express HRMS & Hiring Portal - Comprehensive QA Manual Test Checklist
 
 This checklist defines the complete end-to-end manual acceptance testing plan for **Phase 1** (Core Hiring MVP) and **Phase 2** (Automation: Resume Parsing, AI Screening & CV Bank) of the Road Express HRMS & Hiring Portal.
 
 > [!NOTE]
 > **Company Domain Boundary:**
-> Road Express is a logistics technology and operations aggregator — we do **not** own trucks or employ truck drivers.
+> Road Express is a logistics technology and operations aggregator - we do **not** own trucks or employ truck drivers.
 > Hiring focuses on corporate and operational excellence: **Accounts & Finance, Supply Chain & Logistics, Team Leads / Operations Managers, Human Resources, Engineering, and Data Analysis**.
 
 ---
@@ -54,13 +54,13 @@ The Candidate Portal is clean, responsive, and mobile-first, operating without l
 - [ ] **Visual Progress Bar:** Displays the 4 plain-language candidate progress stages:
   1. *Application Received* (APPLIED)
   2. *Under Review* (SCREENED, INTERVIEWED, OFFERED)
-  3. *Shortlisted — Interview Details Sent* (SHORTLISTED, INTERVIEW_SCHEDULED)
+  3. *Shortlisted - Interview Details Sent* (SHORTLISTED, INTERVIEW_SCHEDULED)
   4. *Not Selected* (REJECTED, CLOSED)
 - [ ] **Status History Privacy:** Internal HR notes, rejection reasons, and scores are strictly omitted from the candidate tracking screen.
 
 ---
 
-## 2. HR Persona Checklist — Core MVP & Pipeline Management
+## 2. HR Persona Checklist - Core MVP & Pipeline Management
 
 The HR Admin Portal is protected by JWT authentication and optimized for high-volume recruitment workflows.
 
@@ -96,7 +96,7 @@ The HR Admin Portal is protected by JWT authentication and optimized for high-vo
 
 ### HP-04 · LinkedIn Copy & Social Sharing (`/jobs/[id]`)
 - [ ] **Formatted Copy Generation:**
-  - Role headline + 2–3 sentence plain summary + application link: `{CANDIDATE_PORTAL_URL}/jobs/{id}`.
+  - Role headline + 2-3 sentence plain summary + application link: `{CANDIDATE_PORTAL_URL}/jobs/{id}`.
   - **Zero Emojis & Zero Hashtags:** Strict verification that copy contains no emojis and no `#` symbols.
 - [ ] **Copy to Clipboard:** One-click copy button copies the exact copy text.
 - [ ] **"Mark as Posted" Toggle:** Clicking records `linkedin_posted = true` and updates the timestamp.
@@ -157,10 +157,10 @@ Phase 2 automates resume ingestion, candidate scoring against job requirements, 
   - Upon successful parsing (`parse_status = "done"`), worker automatically enqueues `run_screening_task(application_id)`.
 
 ### P2-AS · AI Screening Worker (`P2-02`)
-- [ ] **Automated Scoring (0–100):**
+- [ ] **Automated Scoring (0-100):**
   - Worker loads `parsed_json`, `job_role.jd_text`, and `required_skills`.
   - Prompts Gemini with strict JSON schema to evaluate role alignment.
-  - Returns integer score 0–100, `matched_skills`, `missing_skills`, and concise `llm_rationale`.
+  - Returns integer score 0-100, `matched_skills`, `missing_skills`, and concise `llm_rationale`.
 - [ ] **Deterministic Hard Filter (Experience Check):**
   - If `candidate.total_experience_years < job_role.min_experience_years`, sets `hard_filter_passed = false`.
   - This rule is deterministic and cannot be overridden by LLM optimism.
@@ -171,7 +171,7 @@ Phase 2 automates resume ingestion, candidate scoring against job requirements, 
   - If Gemini API fails after 3 retries, worker writes safe fallback screening result:
     - `score = 0`
     - `hard_filter_passed = false`
-    - `llm_rationale = "Screening failed — manual review required"`
+    - `llm_rationale = "Screening failed - manual review required"`
   - Transitions application to `SCREENED` so candidate is never trapped in limbo.
 - [ ] **Advisory Nature Constraint:**
   - Screening worker never automatically shortlists or rejects candidates; recruitment decision remains with HR.
@@ -180,11 +180,11 @@ Phase 2 automates resume ingestion, candidate scoring against job requirements, 
 
 ### P2-HP · HR Screening Panel & Pipeline UI (`P2-04`)
 - [ ] **AI Score Display (`/pipeline/[roleId]`):**
-  - Pipeline table displays dedicated AI Score column (0–100).
+  - Pipeline table displays dedicated AI Score column (0-100).
   - Subtle background progress bar visually reflects score magnitude.
   - Color-coding rules:
     - Green badge: Score ≥ 70
-    - Amber badge: Score 40–69
+    - Amber badge: Score 40-69
     - Red badge: Score < 40
   - Unscreened candidates display a neutral "Pending" badge.
 - [ ] **Hard Filter Indicator:**
